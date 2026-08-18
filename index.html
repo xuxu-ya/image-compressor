@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图片压缩小工具</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --line:#e3e8ef; --txt:#1f2937;
+    --sub:#6b7280; --brand:#2563eb; --brand2:#1e40af; --ok:#16a34a; --warn:#d97706;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--txt);padding:32px 16px}
+  .wrap{max-width:880px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 6px}
+  .tip{color:var(--sub);font-size:13px;margin:0 0 18px;line-height:1.6}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:16px}
+  .card-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:var(--txt);margin:0 0 14px}
+  .card-title .badge{font-size:18px}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:28px 18px;text-align:center;
+        cursor:pointer;transition:.15s;background:#fafbfc}
+  .drop:hover,.drop.over{border-color:var(--brand);background:#eff6ff}
+  .drop-ico{font-size:30px;margin-bottom:6px;line-height:1}
+  .drop p{margin:0}
+  .drop b{color:var(--brand)} .drop small{color:var(--sub);display:block;margin-top:6px}
+  input[type=file]{display:none}
+  .divider{display:flex;align-items:center;gap:10px;margin:14px 0 4px;color:var(--sub);font-size:12px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  textarea{width:100%;min-height:80px;padding:10px 12px;border:1px solid var(--line);
+        border-radius:10px;font-size:13px;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--brand)}
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 14px;margin:10px 0 0;align-items:start}
+  .opts label{font-size:14px;display:flex;flex-direction:column;gap:6px;color:var(--txt)}
+  .opts > label:not(.inline){font-size:13px;color:var(--sub);font-weight:500}
+  .opts > label > input[type=number]{width:100%;padding:9px 10px;border:1px solid var(--line);
+        border-radius:9px;font-size:14px;background:#fff;transition:.15s}
+  .opts input[type=number]{padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff}
+  .opts input[type=number]:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  .opts input[type=number]:disabled{background:#f1f5f9;color:#9aa3af}
+  .sizerow input[type=number]{width:84px}
+  .opts .inline{display:flex;align-items:center;gap:7px;flex-direction:row;font-size:14px;color:var(--txt);cursor:pointer;white-space:nowrap}
+  .optgroup{grid-column:1 / -1;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:#fcfdff}
+  .optgroup > .ttl{font-size:13px;font-weight:600;color:var(--brand2);margin-bottom:8px}
+  .sizemode{display:flex;gap:6px;padding:4px;background:#eef2f7;border-radius:10px}
+  .sizemode label{font-size:14px;flex:1;justify-content:center;align-items:center;gap:6px;cursor:pointer;
+        padding:9px 12px;border-radius:8px;background:#fff;border:1px solid transparent;transition:.15s;color:var(--txt)}
+  .sizemode label:has(input:checked){background:var(--brand);color:#fff;border-color:var(--brand)}
+  .sizemode label:has(input:checked) input{accent-color:#fff}
+  .sizerow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .saverow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .dirname{font-size:13px;color:var(--sub)} .dirname b{color:var(--brand2)}
+  .row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .tabs{display:flex;gap:8px}
+  .tab{flex:1;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--sub);
+       font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;transition:.15s}
+  .tab:hover{border-color:var(--brand)}
+  .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .tabpane{margin-top:4px}
+  .tabhint{color:var(--sub);font-size:12px;margin:10px 0 0;line-height:1.5}
+  .fmtnote{color:var(--sub);font-size:12px;margin-left:4px;white-space:nowrap}
+  .dithwrap{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;white-space:nowrap}
+  button{background:var(--brand);color:#fff;border:none;border-radius:10px;
+        padding:11px 20px;font-size:15px;cursor:pointer;font-weight:600}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  button.mini{padding:7px 12px;font-size:13px}
+  .queue{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .qitem{display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid var(--line);
+         border-radius:10px;padding:8px 12px;font-size:13px}
+  .qitem .idx{width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:var(--brand);
+         color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .qitem .nm{flex:1;word-break:break-all}
+  .qitem .dm{color:var(--sub);white-space:nowrap}
+  .qitem .dm b{color:var(--brand2)}
+  .qitem .rm{background:none;border:none;color:#b91c1c;cursor:pointer;font-size:16px;padding:2px 6px}
+  .result{margin-top:18px;display:none} .result.show{display:block}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+  .chip{background:#eff6ff;color:var(--brand2);border:1px solid #dbeafe;
+        border-radius:999px;padding:6px 12px;font-size:13px}
+  .chip b{color:var(--txt)}
+  .note{font-size:13px;padding:10px 12px;border-radius:10px;margin:8px 0;line-height:1.5}
+  .note.ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+  .note.warn{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+  .imgs{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  figure{margin:0;flex:1;min-width:240px}
+  figure img{width:100%;max-height:340px;object-fit:contain;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+  figcaption{font-size:12px;color:var(--sub);margin-top:6px;text-align:center}
+  .bar{height:10px;border-radius:6px;background:#e5e7eb;overflow:hidden;margin-top:6px}
+  .bar>i{display:block;height:100%;background:var(--ok)}
+  .err{color:#b91c1c;font-size:13px;margin-top:10px}
+  .hint{color:var(--sub);font-size:12px;margin:10px 0 0;line-height:1.5}
+  .hint b{color:var(--brand)}
+  .prog{display:none;align-items:center;gap:10px;margin-top:12px;
+        font-size:13px;color:var(--sub);background:#f8fafc;border:1px solid var(--line);
+        border-radius:10px;padding:10px 14px}
+  .prog.show{display:flex}
+  .spinner{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--brand);
+        border-radius:50%;animation:spin .8s linear infinite;flex:0 0 auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ptxt{color:var(--txt)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{position:sticky;top:0;background:#f1f5f9;color:var(--sub);font-weight:600;white-space:nowrap;z-index:1}
+  td.name{word-break:break-all;max-width:200px}
+  .tbl-wrap{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px}
+  .summary{font-size:13px;color:var(--sub);margin-top:8px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+  .pill.ok{background:#dcfce7;color:#166534} .pill.bad{background:#fee2e2;color:#991b1b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🪄 图片压缩小工具</h1>
+  <p class="tip">支持 GIF 动图以及 PNG / JPG / WebP / BMP / TIFF 等所有常见图片格式。添加后<b>自动显示原图尺寸</b>，可微调尺寸或按百分比缩放来实现压缩；结果展示压缩前后的<b>尺寸、帧数、色数、体积</b>变化。可一次处理单张或批量（文件夹 / 多链接 / 表格）。</p>
+
+  <!-- ============ 输入区（Tab 切换：二选一） ============ -->
+  <div class="card">
+    <h2 class="card-title"><span class="badge">📥</span> 添加图片</h2>
+    <div class="tabs">
+      <button type="button" class="tab active" id="tabFile">📁 上传文件</button>
+      <button type="button" class="tab" id="tabUrl">🔗 图片链接</button>
+    </div>
+    <p class="tabhint">两种来源二选一：切到「图片链接」会清空已添加的文件，反之亦然。</p>
+
+    <div class="tabpane" id="paneFile">
+      <div class="drop" id="drop">
+        <div class="drop-ico">📂</div>
+        <p><b>点击或拖拽图片 / 文件夹到此处</b></p>
+        <small>支持单张、多张、整个文件夹（递归）</small>
+        <input type="file" id="file" accept="image/*" multiple>
+      </div>
+    </div>
+
+    <div class="tabpane" id="paneUrl" style="display:none">
+      <textarea id="url" placeholder="https://a.com/1.gif&#10;https://a.com/2.png&#10;https://a.com/3.jpg"></textarea>
+      <div class="divider">或 上传表格（CSV，含图片链接列）</div>
+      <div class="row">
+        <button type="button" class="ghost mini" id="pickCsv">📄 上传 CSV 表格</button>
+        <input type="file" id="csv" accept=".csv,text/csv" style="display:none">
+        <span class="dirname">CSV 中的链接会自动填入上方文本框</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="dirname" id="count">尚未添加</span>
+    </div>
+    <div class="queue" id="queue"></div>
+  </div>
+
+  <!-- ============ 选项 ============ -->
+  <div class="card">
+    <h2 class="card-title"><span class="badge">⚙️</span> 压缩参数</h2>
+    <div class="opts">
+      <label>目标体积(MB)
+        <input type="number" id="target" value="5" min="0.1" max="50" step="0.1">
+      </label>
+      <label>最大颜色数
+        <input type="number" id="colors" value="256" min="2" max="256" step="1">
+      </label>
+      <label>质量(JPG/WebP)
+        <input type="number" id="quality" value="85" min="10" max="100" step="5">
+      </label>
+
+      <div class="optgroup">
+        <div class="ttl">尺寸调整（二选一）</div>
+        <div class="sizemode">
+          <label><input type="radio" name="sizemode" value="dims" checked> 指定尺寸</label>
+          <label><input type="radio" name="sizemode" value="scale"> 按比例缩放</label>
+        </div>
+        <div class="sizerow" id="scaleBox">
+          <label class="inline">百分比
+            <input type="number" id="scalePct" value="100" min="1" max="100" step="1"> %
+          </label>
+        </div>
+        <div class="sizerow" id="dimsBox" style="display:none">
+          <label class="inline">宽
+            <input type="number" id="width" value="" min="1" placeholder="留空=按比例" step="1">
+          </label>
+          <label class="inline">高
+            <input type="number" id="height" value="" min="1" placeholder="留空=按比例" step="1">
+          </label>
+          <label class="inline"><input type="checkbox" id="lockRatio" checked> 保持比例</label>
+        </div>
+        <small style="color:var(--sub);font-size:12px">按比例缩放与指定尺寸只能选一个；指定尺寸只缩不放，单边长留空则按原比例换算。</small>
+      </div>
+
+      <label class="inline"><input type="checkbox" id="skip" checked> 允许降低帧率</label>
+      <span class="dithwrap"><label class="inline"><input type="checkbox" id="dither"> 抖动(更平滑)</label> <span class="fmtnote">仅 GIF / PNG（调色板≤256 色）生效</span></span>
+    </div>
+
+    <div class="row" style="margin-top:16px">
+      <button id="go">开始压缩</button>
+      <button id="reset" class="ghost">清空</button>
+    </div>
+    <div class="prog" id="prog"><span class="spinner"></span><span class="ptxt" id="progTxt">压缩中…</span></div>
+    <div class="saverow" style="margin-top:12px">
+      <button type="button" class="ghost mini" id="pickDir">💾 选择保存文件夹</button>
+      <span class="dirname" id="savePath">默认保存到程序目录下 <b>output</b> 文件夹</span>
+    </div>
+    <p class="hint">提示：请在本机浏览器打开 <b>http://127.0.0.1:8000</b> 体验最佳（预览窗内点击按钮也可，但文件夹选择可能被 iframe 拦截）。</p>
+    <div class="err" id="err"></div>
+  </div>
+
+  <!-- ============ 结果 ============ -->
+  <div class="card result" id="result">
+    <h2 class="card-title" style="display:none" id="resultTitle"><span class="badge">📊</span> 压缩结果</h2>
+    <div class="meta" id="meta"></div>
+    <div class="note" id="note"></div>
+    <div class="imgs" id="imgs"></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="summary" id="batchSummary" style="display:none"></div>
+    <div class="tbl-wrap" id="tblWrap" style="display:none">
+      <table id="batchTable">
+        <thead><tr>
+          <th>文件名</th><th>格式</th><th>尺寸(前→后)</th><th>帧数(前→后)</th>
+          <th>色数(前→后)</th><th>体积(前→后)</th><th>状态</th>
+        </tr></thead>
+        <tbody id="batchBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const API = (location.port === '8000') ? '' : 'http://127.0.0.1:8000';
+let saveDirHandle = null;
+let queue = [];           // {kind:'file'|'url', file?, url?, name, size, w, h}
+let sizemode = 'scale';
+let activeMode = 'file';  // 'file' | 'url'：两种来源二选一
+
+// ---------- 文件 / 文件夹选择 ----------
+$('drop').onclick = () => $('file').click();
+$('pickCsv').onclick = () => $('csv').click();
+
+// ---------- Tab 切换：上传文件 / 图片链接 二选一 ----------
+function switchTab(mode){
+  if(mode === activeMode) return;
+  if(mode === 'file'){
+    queue = queue.filter(i => i.kind !== 'url');  // 切到文件：清空链接来源
+    $('url').value = '';
+  } else {
+    queue = queue.filter(i => i.kind !== 'file');  // 切到链接：清空已添加的文件
+  }
+  activeMode = mode;
+  $('tabFile').classList.toggle('active', mode==='file');
+  $('tabUrl').classList.toggle('active', mode==='url');
+  $('paneFile').style.display = mode==='file' ? '' : 'none';
+  $('paneUrl').style.display  = mode==='url'  ? '' : 'none';
+  renderQueue(); updateCount();
+}
+$('tabFile').onclick = () => switchTab('file');
+$('tabUrl').onclick = () => switchTab('url');
+
+// 拖拽区可直接点击选择文件；文件夹通过拖拽添加
+// ---------- 拖拽（文件夹递归 + 多文件）----------
+['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over');}));
+['dragleave','dragend'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over');}));
+$('drop').addEventListener('drop', async e=>{
+  e.preventDefault(); $('drop').classList.remove('over');
+  const items = e.dataTransfer.items;
+  if(items && items.length && items[0].webkitGetAsEntry){
+    const files = await collectEntries(items);
+    if(files.length){ addFiles(files); return; }
+  }
+  addFiles([...e.dataTransfer.files]);
+});
+
+// ---------- 选择文件 ----------
+$('file').onchange = e => { addFiles([...e.target.files]); e.target.value=''; };
+
+// ---------- 链接文本框 ----------
+$('url').addEventListener('input', updateCount);
+
+// ---------- CSV ----------
+$('csv').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  const text = await f.text();
+  const urls = parseCsvUrls(text);
+  const cur = $('url').value.trim();
+  $('url').value = (cur ? cur + '\n' : '') + urls.join('\n');
+  syncUrlBox();   // 由文本框统一重建链接队列（含尺寸读取）
+  e.target.value='';
+};
+
+function isImageFile(f){
+  return f.type.startsWith('image/') || /\.(gif|png|jpe?g|webp|bmp|tiff?)$/i.test(f.name);
+}
+
+// ---------- 添加文件：自动读取尺寸 ----------
+function addFiles(files){
+  for(const f of files){
+    if(!isImageFile(f)) continue;
+    const item = {kind:'file', file:f, name:f.name, size:f.size, w:null, h:null};
+    queue.push(item);
+    const img = new Image();
+    img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillDims(); };
+    img.onerror = () => { renderQueue(); };
+    img.src = URL.createObjectURL(f);
+  }
+  renderQueue(); updateCount();
+}
+
+function addUrl(u){
+  if(!/^https?:\/\//i.test(u)) return;
+  const item = {kind:'url', url:u, name:u.split('/').pop().split('?')[0]||'image', size:null, w:null, h:null};
+  queue.push(item);
+  const img = new Image();
+  img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillDims(); };
+  img.onerror = () => { renderQueue(); };
+  img.src = u;
+  renderQueue(); updateCount();
+}
+
+// 文本框失焦/变更时：用文本框内容重建「链接」类队列项，保证与界面一致
+function syncUrlBox(){
+  const lines = [...new Set($('url').value.split('\n').map(s=>s.trim()).filter(Boolean)
+    .filter(u=>/^https?:\/\//i.test(u)))];
+  queue = queue.filter(i=>i.kind!=='url');           // 移除旧链接项
+  lines.forEach(u => {
+    const item = {kind:'url', url:u, name:u.split('/').pop().split('?')[0]||'image', size:null, w:null, h:null};
+    queue.push(item);
+    const img = new Image();                          // 自动读取链接图尺寸
+    img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillDims(); };
+    img.onerror = () => { renderQueue(); };
+    img.src = u;
+  });
+  renderQueue(); updateCount();
+}
+// 文本框失焦或回车时同步
+$('url').addEventListener('blur', syncUrlBox);
+$('url').addEventListener('change', syncUrlBox);
+
+async function collectEntries(items){
+  const out=[];
+  for(const it of items){
+    const entry = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null;
+    if(entry && entry.isDirectory){ await walkDir(entry, out); }
+    else if(it.kind==='file'){ const f=it.getAsFile(); if(f) out.push(f); }
+  }
+  return out;
+}
+async function walkDir(entry, out){
+  const reader = entry.createReader();
+  const ents = await new Promise(res=>reader.readEntries(res));
+  for(const e of ents){
+    if(e.isDirectory) await walkDir(e, out);
+    else if(e.isFile){ await new Promise(res=>e.file(f=>{ if(isImageFile(f)) out.push(f); res(); })); }
+  }
+}
+function parseCsvUrls(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const urls=[];
+  for(let i=0;i<lines.length;i++){
+    const cells = lines[i].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+    if(i===0){
+      const ci = cells.findIndex(c=>/^(url|link|链接|图片|image)$/i.test(c));
+      if(ci>=0){ cells.forEach((c,idx)=>{ if(idx!==ci && /^https?:\/\//i.test(c)) urls.push(c); }); continue; }
+    }
+    for(const c of cells){ if(/^https?:\/\//i.test(c)) urls.push(c); }
+  }
+  return urls;
+}
+
+// ---------- 渲染队列 ----------
+function renderQueue(){
+  const box = $('queue'); box.innerHTML='';
+  queue.forEach((it, i)=>{
+    const div = document.createElement('div'); div.className='qitem';
+    const dm = (it.w && it.h) ? `<b>${it.w}×${it.h}</b>` : (it.w?`<b>${it.w}px</b>`:'<span>读取尺寸中…</span>');
+    const sz = it.size!=null ? (it.size/1024/1024).toFixed(2)+' MB' : '';
+    div.innerHTML = `<span class="idx">${i+1}</span>`+
+      `<span class="nm">${esc(it.name)}</span>`+
+      `<span class="dm">${dm} ${sz?'· '+sz:''}</span>`+
+      `<button class="rm" title="移除">✕</button>`;
+    div.querySelector('.rm').onclick = () => { queue.splice(i,1); renderQueue(); updateCount(); };
+    box.appendChild(div);
+  });
+}
+function updateCount(){
+  const files = queue.filter(i=>i.kind==='file').length;
+  const urls = queue.filter(i=>i.kind==='url').length;
+  $('count').textContent = `已添加 ${files} 个文件，链接 ${urls} 条`;
+}
+
+// ---------- 尺寸模式：缩放(%) / 指定尺寸 二选一 ----------
+function setSizeMode(mode){
+  sizemode = mode;
+  const scaleOn = (mode==='scale');
+  $('scaleBox').style.display = scaleOn ? 'flex':'none';
+  $('dimsBox').style.display = scaleOn ? 'none':'flex';
+  $('scalePct').disabled = !scaleOn;
+  $('width').disabled = scaleOn;
+  $('height').disabled = scaleOn;
+  $('lockRatio').disabled = scaleOn;
+  if(!scaleOn) autofillDims();
+}
+document.querySelectorAll('input[name=sizemode]').forEach(r=>{
+  r.onclick = () => setSizeMode(r.value);
+});
+
+function firstRatio(){
+  const it = queue.find(i=>i.w && i.h);
+  return it ? it.w / it.h : null;
+}
+// 切到「指定尺寸」且宽高为空时，用第一张图的原尺寸预填，方便微调
+function autofillDims(){
+  if(sizemode!=='dims') return;
+  const it = queue.find(i=>i.w && i.h);
+  if(!it) return;
+  if(!$('width').value && !$('height').value){
+    $('width').value = it.w; $('height').value = it.h;
+  }
+}
+// 保持比例：编辑一边自动算另一边
+function bindLock(){
+  $('width').addEventListener('input', ()=>{
+    if($('lockRatio').checked){ const r=firstRatio(); if(r) $('height').value = Math.max(1, Math.round($('width').value / r)); }
+  });
+  $('height').addEventListener('input', ()=>{
+    if($('lockRatio').checked){ const r=firstRatio(); if(r) $('width').value = Math.max(1, Math.round($('height').value * r)); }
+  });
+}
+bindLock();
+
+// ---------- 文件夹选择（保存）----------
+$('pickDir').onclick = async () => {
+  if(!window.showDirectoryPicker){
+    alert('当前浏览器不支持文件夹选择，将改用默认 output 文件夹保存。'); return;
+  }
+  try{
+    saveDirHandle = await window.showDirectoryPicker();
+    $('savePath').innerHTML = '已选保存文件夹：<b>'+saveDirHandle.name+'</b>';
+  }catch(e){ if(e && e.name!=='AbortError') console.warn(e); }
+};
+async function clientSideSave(blob, fname){
+  if(!saveDirHandle) return false;
+  try{
+    const fh = await saveDirHandle.getFileHandle(fname, {create:true});
+    const w = await fh.createWritable(); await w.write(blob); await w.close();
+    return true;
+  }catch(e){ return false; }
+}
+
+// ---------- 读取选项为参数 ----------
+function buildParams(){
+  const p = {
+    target: $('target').value,
+    max_colors: $('colors').value,
+    quality: $('quality').value,
+    allow_frame_skip: $('skip').checked ? '1':'0',
+    dither: $('dither').checked ? '1':'0',
+  };
+  if(sizemode==='scale'){
+    p.scale = (parseFloat($('scalePct').value) || 100) / 100;
+    p.width = 0; p.height = 0;
+  } else {
+    p.scale = 0;
+    p.width = $('width').value || 0;
+    p.height = $('height').value || 0;
+    // 保持比例且只填了一边：另一边留空让后端按各图比例换算
+    if($('lockRatio').checked){
+      if(p.width && !p.height) p.height = 0;
+      if(p.height && !p.width) p.width = 0;
+    }
+  }
+  return p;
+}
+
+// ======================================================================
+// 压缩入口（单张 / 批量统一）
+// ======================================================================
+$('go').onclick = async () => {
+  if(activeMode==='url'){ syncUrlBox(); }   // 确保文本框最新内容已进入队列
+  const files = queue.filter(i=>i.kind==='file');
+  const urls = queue.filter(i=>i.kind==='url');
+  if(files.length===0 && urls.length===0){ $('err').textContent='请先添加图片、文件夹或链接'; return; }
+  const params = buildParams();
+  if(queue.length===1){ await compressSingle(queue[0], params); }
+  else { await compressBatch(params); }
+};
+
+function showProg(txt){ $('progTxt').textContent = txt; $('prog').classList.add('show'); }
+function hideProg(){ $('prog').classList.remove('show'); }
+
+async function compressSingle(item, params){
+  $('err').textContent='';
+  let body='', fallback=item.name, qs=new URLSearchParams(params);
+  if(item.kind==='url'){ qs.set('url', item.url); }
+  else { qs.set('name', item.name); body=item.file; }
+  $('go').disabled=true; $('go').textContent='压缩中…';
+  showProg('正在压缩，请稍候…');
+  try{
+    const resp = await fetch(API + '/compress?'+qs.toString(), {method:'POST', body});
+    if(!resp.ok) throw new Error(await resp.text());
+    const meta = {};
+    (resp.headers.get('X-Compress-Meta')||'').split(';').forEach(kv=>{
+      const [k,v]=kv.split('='); if(k) meta[k]=decodeURIComponent(v||'');
+    });
+    const fname = resp.headers.get('X-Filename') || ('compressed_'+fallback);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    // 预览：原图 + 压缩后
+    const origSrc = item.kind==='url' ? item.url : (item._objUrl || (item._objUrl = URL.createObjectURL(item.file)));
+    $('imgs').innerHTML =
+      `<figure><img src="${origSrc}" alt="原图"><figcaption>原图 ${meta.width_in}×${meta.height_in} · ${meta.size_in_mb} MB</figcaption></figure>`+
+      `<figure><img src="${url}" alt="压缩后"><figcaption>压缩后 ${meta.width_out}×${meta.height_out} · ${meta.size_mb} MB</figcaption></figure>`;
+    buildMeta(meta);
+    const okFlag = meta.ok==='1';
+    $('note').className = 'note '+(okFlag?'ok':'warn');
+    $('note').textContent = meta.note || '';
+    const t = parseFloat($('target').value);
+    const pct = Math.min(100, Math.round(parseFloat(meta.size_mb)/t*100));
+    $('bar').style.width = pct+'%'; $('bar').style.background = okFlag ? 'var(--ok)':'var(--warn)';
+    hideBatch();
+    if(saveDirHandle){ await clientSideSave(blob, fname); }
+    $('resultTitle').style.display='flex';
+    $('result').classList.add('show');
+    $('result').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }catch(e){ $('err').textContent='压缩失败：'+e.message; }
+  finally{ hideProg(); $('go').disabled=false; $('go').textContent='开始压缩'; }
+}
+
+async function compressBatch(params){
+  $('err').textContent='';
+  const fd = new FormData();
+  queue.filter(i=>i.kind==='file').forEach(i=>fd.append('files', i.file, i.name));
+  const urlList = queue.filter(i=>i.kind==='url').map(i=>i.url);
+  fd.append('urls', urlList.join('\n'));
+  fd.append('params', JSON.stringify(params));
+  $('go').disabled=true; $('go').textContent='压缩中…';
+  showProg('正在压缩（共 '+queue.length+' 个）…');
+  try{
+    const resp = await fetch(API + '/batch', {method:'POST', body: fd});
+    if(!resp.ok) throw new Error(await resp.text());
+    const manifest = JSON.parse(decodeURIComponent(resp.headers.get('X-Batch-Manifest')||'[]'));
+    const zipBlob = await resp.blob();
+    renderBatchTable(manifest, zipBlob);
+    $('imgs').innerHTML='';
+    if(saveDirHandle){ await clientSideSave(zipBlob, 'batch_compressed.zip'); }
+    $('resultTitle').style.display='flex';
+    $('result').classList.add('show');
+    $('result').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }catch(e){ $('err').textContent='批量压缩失败：'+e.message; }
+  finally{ hideProg(); $('go').disabled=false; $('go').textContent='开始压缩'; }
+}
+
+function buildMeta(res){
+  const m = $('meta'); m.innerHTML='';
+  const arrows = [
+    ['尺寸', res.width_in+'×'+res.height_in, res.width_out+'×'+res.height_out],
+    ['帧数', res.frames_in, res.frames_out],
+    ['色数', res.colors_in, res.colors_out],
+    ['体积', res.size_in_mb+' MB', res.size_mb+' MB'],
+  ];
+  arrows.forEach(([k,a,b])=>{
+    const s=document.createElement('span'); s.className='chip';
+    s.innerHTML = k+': <b>'+a+'</b> → <b>'+b+'</b>'; m.appendChild(s);
+  });
+  const fm=document.createElement('span'); fm.className='chip';
+  fm.innerHTML='格式: <b>'+res.format_in+' → '+res.format_out+'</b>'; m.appendChild(fm);
+}
+function hideBatch(){
+  $('batchSummary').style.display='none'; $('tblWrap').style.display='none';
+}
+function renderBatchTable(manifest, zipBlob){
+  const body = $('batchBody'); body.innerHTML='';
+  let okN=0;
+  manifest.forEach(r=>{
+    const tr=document.createElement('tr');
+    const ok = r.ok===true || r.ok==='true' || r.ok===1 || r.ok==='1';
+    if(ok) okN++;
+    const fmt = (r.format_in||'')+' → '+(r.format_out||'');
+    const dims = (r.width_in||'?')+'×'+(r.height_in||'?')+' → '+(r.width_out||'?')+'×'+(r.height_out||'?');
+    const fr = (r.frames_in??'?')+' → '+(r.frames_out??'?');
+    const col = (r.colors_in??'?')+' → '+(r.colors_out??'?');
+    const sz = (r.size_in_mb??'?')+' MB → '+(r.size_mb??'?')+' MB';
+    tr.innerHTML = `<td class="name">${esc(r.name)}</td>`+
+      `<td>${esc(fmt)}</td><td>${esc(dims)}</td><td>${esc(fr)}</td>`+
+      `<td>${esc(col)}</td><td>${esc(sz)}</td>`+
+      `<td><span class="pill ${ok?'ok':'bad'}">${ok?'成功':'失败'}</span>`+
+      `${r.note?`<br><small style="color:#92400e">${esc(r.note)}</small>`:''}</td>`;
+    body.appendChild(tr);
+  });
+  $('batchSummary').innerHTML = `共 <b>${manifest.length}</b> 个，成功 <b>${okN}</b> 个。`+
+    `总体积 ${sumKey(manifest,'size_in_mb')} MB → ${sumKey(manifest,'size_mb')} MB`;
+  $('batchSummary').style.display='block';
+  $('tblWrap').style.display='block';
+}
+function sumKey(arr,k){ let s=0; arr.forEach(r=>{ s+=parseFloat(r[k]||0)||0; }); return s.toFixed(2); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+$('reset').onclick = () => {
+  hideProg();
+  queue=[]; renderQueue(); updateCount();
+  $('url').value=''; $('err').textContent='';
+  $('width').value=''; $('height').value='';
+  $('result').classList.remove('show'); $('resultTitle').style.display='none'; hideBatch();
+};
+
+// 初始化
+setSizeMode('dims');
+updateCount();
+</script>
+</body>
+</html>

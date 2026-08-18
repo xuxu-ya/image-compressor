@@ -1,0 +1,29 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+
+# ---- 本地虚拟环境（每台机器自己创建）----
+venv/
+.venv/
+
+# ---- 运行产物（压缩结果，不入库）----
+output/
+
+# ---- 临时测试文件 ----
+_test_*
+*.log
+
+# ---- 示例大图（体积大，不入库）----
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.bmp
+*.tiff
+
+# ---- IDE / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
