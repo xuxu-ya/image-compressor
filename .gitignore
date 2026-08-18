@@ -27,3 +27,10 @@ _test_*
 .idea/
 .DS_Store
 Thumbs.db
+
+# ---- 迭代过程临时测试（非最终回归测试，不入库）----
+test_new.py
+test_v3.py
+test_v4.py
+test_v5.py
+test_v6.py

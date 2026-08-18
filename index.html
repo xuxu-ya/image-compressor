@@ -50,7 +50,12 @@
   .sizemode label:has(input:checked) input{accent-color:#fff}
   .sizerow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
   .saverow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .dirname{font-size:13px;color:var(--sub)} .dirname b{color:var(--brand2)}
+  /* （原自定义目录选择器样式已移除，改用浏览器原生目录选择） */
+  .saverow input[type=text]{flex:1;min-width:220px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;
+        font-size:13px;font-family:Consolas,"Courier New",monospace;background:#fff;color:var(--txt)}
+  .saverow input[type=text]:focus{outline:none;border-color:var(--brand)}
+  code{background:#eef2f7;padding:2px 7px;border-radius:6px;font-size:12px;
+       font-family:Consolas,"Courier New",monospace;color:var(--brand2);word-break:break-all;user-select:all}
   .row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
   .tabs{display:flex;gap:8px}
   .tab{flex:1;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--sub);
@@ -61,20 +66,65 @@
   .tabhint{color:var(--sub);font-size:12px;margin:10px 0 0;line-height:1.5}
   .fmtnote{color:var(--sub);font-size:12px;margin-left:4px;white-space:nowrap}
   .dithwrap{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;white-space:nowrap}
+  /* ---------- 参数行：[☑自动] [数值] + 当前值提示 ---------- */
+  .prow{display:flex;gap:6px;align-items:center}
+  .prow input[type=number]{flex:1;min-width:56px}
+  .prow .autochk{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--sub);
+        border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:#fff;
+        cursor:pointer;white-space:nowrap;user-select:none}
+  .prow .autochk:has(input:checked){background:#eff6ff;border-color:#bfdbfe;color:var(--brand2);font-weight:600}
+  .prow .autochk:disabled{opacity:.45;cursor:not-allowed}
+  .cur{font-size:12px;color:var(--sub);min-height:15px;line-height:1.4}
+  .cur b{color:var(--brand2);font-weight:600}
+  .cur.na{color:#b45309}
+  label.pfield.na .prow,.pfield .dyncol.na .prow{opacity:.55}
+  .prow select{flex:1;min-width:0}
+  .pfield.dynpair{flex-direction:row;gap:16px;align-items:flex-start;grid-column:1/-1}
+  .pfield.dynpair .dyncol{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .pfield.dynpair .cap{font-size:13px;color:var(--sub);font-weight:500}
+  .pfield.dynpair .prow{width:100%}
+  .smartrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .smartrow input[type=number]{width:120px;padding:9px 10px;border:1px solid var(--line);
+        border-radius:9px;font-size:15px;background:#fff}
+  .smartrow input[type=number]:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  .smartrow select{padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff}
   button{background:var(--brand);color:#fff;border:none;border-radius:10px;
         padding:11px 20px;font-size:15px;cursor:pointer;font-weight:600}
   button:disabled{opacity:.5;cursor:not-allowed}
   button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
   button.mini{padding:7px 12px;font-size:13px}
-  .queue{margin-top:14px;display:flex;flex-direction:column;gap:8px}
-  .qitem{display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid var(--line);
-         border-radius:10px;padding:8px 12px;font-size:13px}
-  .qitem .idx{width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:var(--brand);
-         color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
-  .qitem .nm{flex:1;word-break:break-all}
-  .qitem .dm{color:var(--sub);white-space:nowrap}
-  .qitem .dm b{color:var(--brand2)}
-  .qitem .rm{background:none;border:none;color:#b91c1c;cursor:pointer;font-size:16px;padding:2px 6px}
+  .scopebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;border-radius:8px;background:#f1f5f9;border:1px solid var(--line)}
+  .scopebar span{font-size:13px;color:var(--txt)}
+  .scopebar span b{color:var(--brand2)}
+  /* ---------- 缩略图网格 ---------- */
+  .qgrid{margin-top:14px;display:grid;gap:10px;grid-template-columns:repeat(6,1fr);
+         max-height:400px;overflow-y:auto;padding:4px}
+  .qgrid:empty{display:none}
+  .thumb{position:relative;border:2px solid var(--line);border-radius:10px;overflow:hidden;
+         cursor:pointer;background:#fff;transition:.12s;aspect-ratio:1/1}
+  .thumb:hover{border-color:var(--brand);transform:translateY(-1px)}
+  .thumb.sel{border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.16)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+  .thumb .tidx{position:absolute;left:5px;top:5px;min-width:19px;height:19px;padding:0 5px;
+         border-radius:10px;background:rgba(31,41,55,.72);color:#fff;font-size:11px;
+         display:flex;align-items:center;justify-content:center;font-weight:600}
+  .thumb .tbadg{position:absolute;right:5px;top:5px;font-size:11px;background:#dcfce7;
+         color:#166534;border-radius:6px;padding:1px 5px;font-weight:700;border:1px solid #86efac}
+  .thumb .tcap{position:absolute;left:0;right:0;bottom:0;color:#fff;font-size:11px;
+         padding:14px 6px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+         background:linear-gradient(transparent,rgba(0,0,0,.62));pointer-events:none}
+  .thumb .trm{position:absolute;right:5px;bottom:26px;background:rgba(185,28,28,.88);color:#fff;
+         border:none;border-radius:6px;width:21px;height:21px;font-size:12px;cursor:pointer;
+         line-height:1;padding:0;opacity:0;transition:.12s}
+  .thumb:hover .trm{opacity:1}
+  .thumb .trm:hover{background:#b91c1c}
+  /* ---------- 选中图片信息面板 ---------- */
+  .imginfo{display:none;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px;
+         padding:9px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line)}
+  .imginfo.show{display:flex}
+  .imginfo .cap{font-size:12px;color:var(--sub);max-width:240px;overflow:hidden;
+         text-overflow:ellipsis;white-space:nowrap}
+  .imginfo .chip{padding:4px 10px;font-size:12px}
   .result{margin-top:18px;display:none} .result.show{display:block}
   .meta{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
   .chip{background:#eff6ff;color:var(--brand2);border:1px solid #dbeafe;
@@ -83,10 +133,21 @@
   .note{font-size:13px;padding:10px 12px;border-radius:10px;margin:8px 0;line-height:1.5}
   .note.ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
   .note.warn{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
-  .imgs{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .imgs{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;max-height:440px;overflow:auto}
+  .tbl-wrap{max-height:440px;overflow:auto}
   figure{margin:0;flex:1;min-width:240px}
-  figure img{width:100%;max-height:340px;object-fit:contain;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
   figcaption{font-size:12px;color:var(--sub);margin-top:6px;text-align:center}
+  /* 浮动文件名（渐变背景，与上传缩略图 tcap 一致） */
+  .img-wrap{position:relative;display:inline-block;width:100%}
+  .img-wrap img{width:100%;max-height:340px;object-fit:contain;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .img-caption{position:absolute;left:0;right:0;bottom:0;color:#fff;font-size:12px;
+               padding:14px 8px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+               background:linear-gradient(transparent,rgba(0,0,0,.62));pointer-events:none;z-index:2;text-align:center;
+               border-radius:0 0 10px 10px}
+  /* 批量表格小图上的浮动文件名 */
+  .prev-wrap{position:relative;width:64px;height:64px}
+  .prev-wrap img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;background:#fff}
+  .batch-caption{font-size:10px;padding:8px 3px 2px;border-radius:0 0 8px 8px}
   .bar{height:10px;border-radius:6px;background:#e5e7eb;overflow:hidden;margin-top:6px}
   .bar>i{display:block;height:100%;background:var(--ok)}
   .err{color:#b91c1c;font-size:13px;margin-top:10px}
@@ -104,6 +165,15 @@
   th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
   th{position:sticky;top:0;background:#f1f5f9;color:var(--sub);font-weight:600;white-space:nowrap;z-index:1}
   td.name{word-break:break-all;max-width:200px}
+  /* 批量结果：预览图列（压缩后效果缩略图 + 小字文件名） */
+  td.prev{padding:4px 0}
+  td.prev .prev-wrap{margin:0 auto}
+  /* 预览大图弹层 */
+  .hoverPreview{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+        z-index:100;background:rgba(15,23,42,.55);pointer-events:none}
+  .hoverPreview.show{display:flex}
+  .hoverPreview img{max-width:92vw;max-height:90vh;border-radius:12px;background:#fff;
+        box-shadow:0 10px 40px rgba(0,0,0,.35);pointer-events:none}
   .tbl-wrap{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px}
   .summary{font-size:13px;color:var(--sub);margin-top:8px}
   .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
@@ -122,7 +192,7 @@
       <button type="button" class="tab active" id="tabFile">📁 上传文件</button>
       <button type="button" class="tab" id="tabUrl">🔗 图片链接</button>
     </div>
-    <p class="tabhint">两种来源二选一：切到「图片链接」会清空已添加的文件，反之亦然。</p>
+    <p class="tabhint">上传文件与图片链接不可混用：切换时会清空另一来源的内容。</p>
 
     <div class="tabpane" id="paneFile">
       <div class="drop" id="drop">
@@ -143,38 +213,128 @@
       </div>
     </div>
 
-    <div class="row">
+    <div class="row" style="margin-top:12px">
       <span class="dirname" id="count">尚未添加</span>
+      <label class="inline" style="margin-left:auto;font-size:13px;color:var(--sub)">每行显示
+        <select id="perRow" style="padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff">
+          <option value="4">4</option>
+          <option value="6" selected>6</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+        </select> 张
+      </label>
     </div>
-    <div class="queue" id="queue"></div>
+    <div class="qgrid" id="queue"></div>
   </div>
 
   <!-- ============ 选项 ============ -->
   <div class="card">
     <h2 class="card-title"><span class="badge">⚙️</span> 压缩参数</h2>
+
+    <div class="sizemode" style="margin-bottom:14px">
+      <label><input type="radio" name="cmode" value="smart" checked> 🪄 智能压缩（推荐）</label>
+      <label><input type="radio" name="cmode" value="manual"> 🎛 手动调参</label>
+    </div>
+
+    <!-- 智能压缩：傻瓜式统一压到指定体积以内 -->
+    <div id="smartPane" style="display:none">
+      <div class="smartrow">
+        <span style="font-size:14px">目标体积</span>
+        <input type="number" id="smartSize" min="1" step="1">
+        <select id="smartUnit">
+          <option value="kb" selected>KB</option>
+          <option value="mb">MB</option>
+        </select>
+      </div>
+      <div class="smartrow" style="margin-top:10px">
+        <span style="font-size:14px">统一宽度</span>
+        <input type="number" id="smartW" value="" min="1" step="1" placeholder="不限">
+        <span style="font-size:13px;color:var(--sub)">px，或 统一高度</span>
+        <input type="number" id="smartH" value="" min="1" step="1" placeholder="不限">
+        <span style="font-size:13px;color:var(--sub)">px</span>
+      </div>
+    </div>
+
+    <!-- 手动调参 -->
+    <div id="manualPane">
+    <div class="scopebar" id="scopeBar">
+      <span id="scopeLabel">全局参数 · 应用于所有图片</span>
+      <button type="button" class="ghost mini" id="backToGlobal" style="display:none">返回全局参数</button>
+      <button type="button" class="ghost mini" id="applyToAll" style="display:none">应用给全部</button>
+    </div>
     <div class="opts">
-      <label>目标体积(MB)
-        <input type="number" id="target" value="5" min="0.1" max="50" step="0.1">
+      <label>目标体积
+        <span class="prow">
+          <input type="number" id="target" min="1" step="1" style="min-width:120px">
+          <select id="targetUnit" style="padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff">
+            <option value="kb" selected>KB</option>
+            <option value="mb">MB</option>
+          </select>
+        </span>
       </label>
-      <label>最大颜色数
-        <input type="number" id="colors" value="256" min="2" max="256" step="1">
+
+      <label class="pfield">质量（JPG/WebP）
+        <span class="prow">
+          <span class="autochk"><input type="checkbox" id="autoQ"> 智能降低</span>
+          <input type="number" id="quality" min="10" max="100" step="5">
+        </span>
+        <span class="cur" id="curQ"></span>
       </label>
-      <label>质量(JPG/WebP)
-        <input type="number" id="quality" value="85" min="10" max="100" step="5">
+
+      <label class="pfield">颜色数（GIF/PNG）
+        <span class="prow">
+          <span class="autochk"><input type="checkbox" id="autoC"> 智能降低</span>
+          <select id="colors" style="padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff">
+            <option value="256" selected>256</option>
+            <option value="192">192</option>
+            <option value="128">128</option>
+            <option value="96">96</option>
+            <option value="64">64</option>
+            <option value="48">48</option>
+            <option value="32">32</option>
+            <option value="16">16</option>
+            <option value="8">8</option>
+            <option value="4">4</option>
+            <option value="2">2</option>
+          </select>
+        </span>
+        <span class="cur" id="curC"></span>
+      </label>
+
+      <label class="pfield dynpair">
+        <div class="dyncol">
+          <span class="cap">帧数（动图）</span>
+          <span class="prow">
+            <span class="autochk"><input type="checkbox" id="autoF"> 智能降低</span>
+            <input type="number" id="frames" min="1" step="1">
+          </span>
+          <span class="cur" id="curF"></span>
+        </div>
+        <div class="dyncol">
+          <span class="cap">帧率（动图）</span>
+          <span class="prow">
+            <span class="autochk"><input type="checkbox" id="autoR"> 智能降低</span>
+            <input type="number" id="fps" min="1" max="60" step="1">
+          </span>
+          <span class="cur" id="curR"></span>
+        </div>
+        <div class="dyncol">
+          <span class="cap">抖动（GIF/PNG）</span>
+          <span class="prow">
+            <span class="autochk"><input type="checkbox" id="dither"> 启用（更平滑）</span>
+          </span>
+          <span class="cur" id="curD"></span>
+        </div>
       </label>
 
       <div class="optgroup">
-        <div class="ttl">尺寸调整（二选一）</div>
+        <div class="ttl">尺寸调整</div>
         <div class="sizemode">
           <label><input type="radio" name="sizemode" value="dims" checked> 指定尺寸</label>
           <label><input type="radio" name="sizemode" value="scale"> 按比例缩放</label>
         </div>
-        <div class="sizerow" id="scaleBox">
-          <label class="inline">百分比
-            <input type="number" id="scalePct" value="100" min="1" max="100" step="1"> %
-          </label>
-        </div>
-        <div class="sizerow" id="dimsBox" style="display:none">
+        <div class="sizerow" id="dimsBox">
           <label class="inline">宽
             <input type="number" id="width" value="" min="1" placeholder="留空=按比例" step="1">
           </label>
@@ -183,12 +343,15 @@
           </label>
           <label class="inline"><input type="checkbox" id="lockRatio" checked> 保持比例</label>
         </div>
-        <small style="color:var(--sub);font-size:12px">按比例缩放与指定尺寸只能选一个；指定尺寸只缩不放，单边长留空则按原比例换算。</small>
+        <div class="sizerow" id="scaleBox" style="display:none">
+          <label class="inline">百分比
+            <input type="number" id="scalePct" value="100" min="1" max="100" step="1"> %
+          </label>
+        </div>
       </div>
 
-      <label class="inline"><input type="checkbox" id="skip" checked> 允许降低帧率</label>
-      <span class="dithwrap"><label class="inline"><input type="checkbox" id="dither"> 抖动(更平滑)</label> <span class="fmtnote">仅 GIF / PNG（调色板≤256 色）生效</span></span>
     </div>
+    </div><!-- /manualPane -->
 
     <div class="row" style="margin-top:16px">
       <button id="go">开始压缩</button>
@@ -197,9 +360,9 @@
     <div class="prog" id="prog"><span class="spinner"></span><span class="ptxt" id="progTxt">压缩中…</span></div>
     <div class="saverow" style="margin-top:12px">
       <button type="button" class="ghost mini" id="pickDir">💾 选择保存文件夹</button>
-      <span class="dirname" id="savePath">默认保存到程序目录下 <b>output</b> 文件夹</span>
+      <input type="text" id="saveDirInput" placeholder="或直接输入路径（留空 = 默认 output 文件夹）" spellcheck="false">
+      <button type="button" class="ghost mini" id="resetDir">恢复默认</button>
     </div>
-    <p class="hint">提示：请在本机浏览器打开 <b>http://127.0.0.1:8000</b> 体验最佳（预览窗内点击按钮也可，但文件夹选择可能被 iframe 拦截）。</p>
     <div class="err" id="err"></div>
   </div>
 
@@ -214,22 +377,23 @@
     <div class="tbl-wrap" id="tblWrap" style="display:none">
       <table id="batchTable">
         <thead><tr>
-          <th>文件名</th><th>格式</th><th>尺寸(前→后)</th><th>帧数(前→后)</th>
-          <th>色数(前→后)</th><th>体积(前→后)</th><th>状态</th>
+          <th>预览图</th><th>格式</th><th>尺寸(前→后)</th><th>帧数(前→后)</th>
+          <th>帧率(前→后)</th><th>色数(前→后)</th><th>体积(前→后)</th><th>状态</th>
         </tr></thead>
         <tbody id="batchBody"></tbody>
       </table>
     </div>
   </div>
+  <!-- 鼠标悬停预览大图 -->
+  <div class="hoverPreview" id="hoverPreview"><img id="hoverPreviewImg" src="" alt="悬停预览"></div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const API = (location.port === '8000') ? '' : 'http://127.0.0.1:8000';
-let saveDirHandle = null;
 let queue = [];           // {kind:'file'|'url', file?, url?, name, size, w, h}
-let sizemode = 'scale';
-let activeMode = 'file';  // 'file' | 'url'：两种来源二选一
+let sizemode = 'dims';
+let activeMode = 'file';  // 'file' | 'url'：两种来源互斥
 
 // ---------- 文件 / 文件夹选择 ----------
 $('drop').onclick = () => $('file').click();
@@ -249,6 +413,7 @@ function switchTab(mode){
   $('tabUrl').classList.toggle('active', mode==='url');
   $('paneFile').style.display = mode==='file' ? '' : 'none';
   $('paneUrl').style.display  = mode==='url'  ? '' : 'none';
+  if(typeof paramScope === 'number' && !queue[paramScope]) setParamScope('global');
   renderQueue(); updateCount();
 }
 $('tabFile').onclick = () => switchTab('file');
@@ -293,10 +458,10 @@ function isImageFile(f){
 function addFiles(files){
   for(const f of files){
     if(!isImageFile(f)) continue;
-    const item = {kind:'file', file:f, name:f.name, size:f.size, w:null, h:null};
+    const item = {kind:'file', file:f, name:f.name, size:f.size, w:null, h:null, custom:false};
     queue.push(item);
     const img = new Image();
-    img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillDims(); };
+    img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillImageParams(); };
     img.onerror = () => { renderQueue(); };
     img.src = URL.createObjectURL(f);
   }
@@ -305,25 +470,29 @@ function addFiles(files){
 
 function addUrl(u){
   if(!/^https?:\/\//i.test(u)) return;
-  const item = {kind:'url', url:u, name:u.split('/').pop().split('?')[0]||'image', size:null, w:null, h:null};
+  const item = {kind:'url', url:u, name:u.split('/').pop().split('?')[0]||'image', size:null, w:null, h:null, custom:false};
   queue.push(item);
   const img = new Image();
-  img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillDims(); };
+  img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillImageParams(); };
   img.onerror = () => { renderQueue(); };
   img.src = u;
   renderQueue(); updateCount();
 }
 
 // 文本框失焦/变更时：用文本框内容重建「链接」类队列项，保证与界面一致
+// 注意：重建时按 url 继承旧项的 custom / pt（每图单独参数），避免失焦或压缩前同步时丢失设置
 function syncUrlBox(){
   const lines = [...new Set($('url').value.split('\n').map(s=>s.trim()).filter(Boolean)
     .filter(u=>/^https?:\/\//i.test(u)))];
+  const old = new Map(queue.filter(i=>i.kind==='url').map(i=>[i.url, i]));
   queue = queue.filter(i=>i.kind!=='url');           // 移除旧链接项
   lines.forEach(u => {
-    const item = {kind:'url', url:u, name:u.split('/').pop().split('?')[0]||'image', size:null, w:null, h:null};
+    const prev = old.get(u);
+    const item = {kind:'url', url:u, name:u.split('/').pop().split('?')[0]||'image', size:null, w:null, h:null, custom:false};
+    if(prev){ item.custom = prev.custom; item.pt = prev.pt; item.w = prev.w; item.h = prev.h; item.info = prev.info; }
     queue.push(item);
     const img = new Image();                          // 自动读取链接图尺寸
-    img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillDims(); };
+    img.onload = () => { item.w = img.naturalWidth; item.h = img.naturalHeight; renderQueue(); autofillImageParams(); };
     img.onerror = () => { renderQueue(); };
     img.src = u;
   });
@@ -364,54 +533,399 @@ function parseCsvUrls(text){
   return urls;
 }
 
-// ---------- 渲染队列 ----------
+// ---------- 全局参数默认值 + 当前编辑作用域 ----------
+let cmode = 'smart';      // 'manual' 手动调参 | 'smart' 智能压缩
+let globalParams = {
+  target: '', targetUnit: 'kb', max_colors: '256', quality: '',
+  autoQ: false, autoC: false, autoF: false, autoR: false,
+  frames: '', fps: '',
+  smode: 'dims', scale: '100', width: '', height: '',
+  dither: false,
+};
+let paramScope = 'global';   // 'global' | number(queue index)
+
+// 以当前全局参数为每图默认值
+function defaultPt(){
+  return {
+    target: String(globalParams.target),
+    targetUnit: String(globalParams.targetUnit),
+    colors: String(globalParams.max_colors),
+    quality: String(globalParams.quality),
+    autoQ: !!globalParams.autoQ,
+    autoC: !!globalParams.autoC,
+    autoF: !!globalParams.autoF,
+    autoR: !!globalParams.autoR,
+    frames: String(globalParams.frames ?? ''),
+    fps: String(globalParams.fps ?? ''),
+    smode: String(globalParams.smode),
+    scale: String(globalParams.scale),
+    width: String(globalParams.width),
+    height: String(globalParams.height),
+    dither: !!globalParams.dither,
+  };
+}
+
+// form 对象（与 input 对应） <-> per 对象（存在 item.pt）
+function formToPer(p){
+  return {
+    target: String(p.target),
+    targetUnit: String(p.targetUnit ?? 'kb'),
+    colors: String(p.max_colors),
+    quality: String(p.quality),
+    autoQ: !!p.autoQ,
+    autoC: !!p.autoC,
+    autoF: !!p.autoF,
+    autoR: !!p.autoR,
+    frames: String(p.frames ?? ''),
+    fps: String(p.fps ?? ''),
+    smode: String(p.smode),
+    scale: String(p.scale),
+    width: String(p.width),
+    height: String(p.height),
+    dither: !!p.dither,
+  };
+}
+function perToForm(pt){
+  return {
+    target: pt.target,
+    targetUnit: pt.targetUnit ?? 'kb',
+    max_colors: pt.colors,
+    quality: pt.quality,
+    autoQ: pt.autoQ,
+    autoC: pt.autoC,
+    autoF: pt.autoF,
+    autoR: pt.autoR,
+    frames: pt.frames,
+    fps: pt.fps,
+    smode: pt.smode,
+    scale: pt.scale,
+    width: pt.width,
+    height: pt.height,
+    dither: pt.dither,
+  };
+}
+
+// 把当前参数输入框的值保存到当前作用域（全局或某张图）
+// markCustom=true（用户实际修改了参数）才把单图标记为"单独设置"；
+// 仅为切换作用域而保存时不标记——避免点击缩略图浏览信息时误锁参数
+function saveCurrentScope(markCustom){
+  const p = readFormParams();
+  if(paramScope === 'global'){
+    globalParams = p;
+  } else if(typeof paramScope === 'number' && queue[paramScope]){
+    const it = queue[paramScope];
+    if(markCustom || it.custom){
+      it.pt = formToPer(p);
+      it.custom = true;
+    }
+  }
+}
+
+// 切换参数编辑对象：'global' 或 queue index
+function setParamScope(scope){
+  if(scope !== 'global' && !queue[scope]) scope = 'global';  // 目标图已被移除则回全局
+  saveCurrentScope(false);                 // 离开旧作用域前保存（不标记 custom）
+  paramScope = scope;
+  let p;
+  if(scope === 'global'){
+    p = globalParams;
+  } else {
+    const it = queue[scope];
+    if(!it.pt || !it.custom) it.pt = defaultPt();
+    p = perToForm(it.pt);
+    // 点击每张图：默认「指定尺寸」并自动加载该图自身尺寸（各图互不影响）
+    if(!it.custom){
+      p.smode = 'dims';
+      p.width = it.w ? String(it.w) : '';
+      p.height = it.h ? String(it.h) : '';
+    }
+  }
+  fillFormParams(p);
+  updateScopeBar();
+  renderQueue();
+  updateFieldStates();
+}
+
+// 更新参数卡片顶部的 scope 提示条
+function updateScopeBar(){
+  const label = $('scopeLabel');
+  const back = $('backToGlobal');
+  const applyAll = $('applyToAll');
+  applyAll.style.display = queue.length ? '' : 'none';
+  if(paramScope === 'global'){
+    label.innerHTML = '全局参数 · 应用于所有图片';
+    back.style.display = 'none';
+    applyAll.textContent = '应用给全部';
+  } else {
+    const it = queue[paramScope];
+    const name = it ? esc(it.name) : '';
+    label.innerHTML = `<b>单独参数 · ${name}</b>（仅作用于当前图片）`;
+    back.style.display = '';
+    applyAll.textContent = '用此参数覆盖全部';
+  }
+}
+
+// 从输入框读取当前 form 对象
+function readFormParams(){
+  return {
+    target: $('target').value,
+    targetUnit: $('targetUnit').value,
+    max_colors: $('colors').value,
+    quality: $('quality').value,
+    autoQ: $('autoQ').checked,
+    autoC: $('autoC').checked,
+    autoF: $('autoF').checked,
+    autoR: $('autoR').checked,
+    frames: $('frames').value,
+    fps: $('fps').value,
+    dither: $('dither').checked,
+    smode: (sizemode === 'scale') ? 'scale' : 'dims',
+    scale: $('scalePct').value,
+    width: $('width').value,
+    height: $('height').value,
+  };
+}
+
+// 用 form 对象填充输入框
+function fillFormParams(p){
+  $('target').value = p.target;
+  $('targetUnit').value = p.targetUnit || 'kb';
+  $('colors').value = p.max_colors;
+  $('quality').value = p.quality;
+  $('autoQ').checked = !!p.autoQ;
+  $('autoC').checked = !!p.autoC;
+  $('autoF').checked = !!p.autoF;
+  $('autoR').checked = !!p.autoR;
+  $('frames').value = p.frames || '';
+  $('fps').value = p.fps || '';
+  $('dither').checked = !!p.dither;
+  if(p.smode === 'scale'){
+    setSizeMode('scale');
+    $('scalePct').value = p.scale || '100';
+  } else {
+    setSizeMode('dims');
+    $('width').value = p.width || '';
+    $('height').value = p.height || '';
+  }
+}
+
+// 用当前参数重置所有图片的单独参数：
+// - 全局模式下：当前全局参数应用到全部（清除所有单图设置）
+// - 单图模式下：把当前正在编辑的单图参数提升为全局参数，再应用到全部
+function applyGlobalToAll(){
+  globalParams = readFormParams();   // 当前表单值即用户调好的参数（无论哪个作用域）
+  queue.forEach(it => { it.custom = false; it.pt = null; });
+  paramScope = 'global';             // 直接置位，避免 setParamScope 内部再保存覆盖
+  fillFormParams(globalParams);
+  updateScopeBar();
+  renderQueue();
+  updateFieldStates();
+}
+
+// ---------- 缩略图网格 ----------
+let perRow = parseInt(localStorage.getItem('ic_perRow')) || 6;
+function applyPerRow(){
+  $('queue').style.gridTemplateColumns = `repeat(${perRow},1fr)`;
+}
+$('perRow').value = String(perRow);
+$('perRow').onchange = () => {
+  perRow = parseInt($('perRow').value) || 6;
+  localStorage.setItem('ic_perRow', String(perRow));
+  applyPerRow();
+};
+applyPerRow();
+
+function thumbSrc(it){
+  if(it.kind === 'url') return it.url;
+  if(!it._objUrl && it.file) it._objUrl = URL.createObjectURL(it.file);
+  return it._objUrl || '';
+}
+
 function renderQueue(){
   const box = $('queue'); box.innerHTML='';
+  applyPerRow();
   queue.forEach((it, i)=>{
-    const div = document.createElement('div'); div.className='qitem';
-    const dm = (it.w && it.h) ? `<b>${it.w}×${it.h}</b>` : (it.w?`<b>${it.w}px</b>`:'<span>读取尺寸中…</span>');
-    const sz = it.size!=null ? (it.size/1024/1024).toFixed(2)+' MB' : '';
-    div.innerHTML = `<span class="idx">${i+1}</span>`+
-      `<span class="nm">${esc(it.name)}</span>`+
-      `<span class="dm">${dm} ${sz?'· '+sz:''}</span>`+
-      `<button class="rm" title="移除">✕</button>`;
-    div.querySelector('.rm').onclick = () => { queue.splice(i,1); renderQueue(); updateCount(); };
-    box.appendChild(div);
+    const d = document.createElement('div');
+    d.className = 'thumb' + (paramScope === i ? ' sel' : '');
+    d.title = it.name + (it.custom ? '（已单独设置参数）' : '');
+    d.innerHTML = `<span class="tidx">${i+1}</span>`+
+      (it.custom ? '<span class="tbadg">✅</span>' : '')+
+      `<img loading="lazy" src="${thumbSrc(it)}" alt="">`+
+      `<span class="tcap">${esc(it.name)}</span>`+
+      `<button class="trm" title="移除">✕</button>`;
+    d.querySelector('.trm').onclick = (e) => {
+      e.stopPropagation();
+      queue.splice(i,1);
+      if(paramScope === i) setParamScope('global');
+      else if(typeof paramScope === 'number' && paramScope > i) paramScope -= 1;
+      renderQueue(); updateCount(); updateScopeBar();
+    };
+    d.onclick = () => selectItem(i);
+    box.appendChild(d);
   });
 }
+
+// 点击缩略图：选中该图 → 参数区直接填充该图参数，可立即修改（不再弹信息面板）
+function selectItem(i){
+  const it = queue[i];
+  if(!it) return;
+  if(cmode === 'smart') return;   // 智能模式：全部统一参数，无需单图切换
+  if(paramScope !== i) setParamScope(i);
+  probeItem(it);                  // 后台读取图片信息 → 刷新"当前值"提示与灰显
+}
+
+// 静默探测图片信息（缓存到 it.info），完成后刷新参数区字段状态
+async function probeItem(it){
+  if(it.info){ updateFieldStates(); return; }
+  if(it.probing) return;
+  it.probing = true;
+  try{
+    let resp;
+    if(it.kind === 'url'){
+      resp = await fetch(API + '/probe?url=' + encodeURIComponent(it.url), {method:'POST'});
+    } else {
+      resp = await fetch(API + '/probe?name=' + encodeURIComponent(it.name), {method:'POST', body: it.file});
+    }
+    const j = await resp.json();
+    if(j && j.ok){
+      it.info = j;                            // 缓存，切换回来无需重新请求
+      if(j.width){ it.w = j.width; it.h = j.height; }
+      autofillImageParams();                         // 尺寸/帧数/帧率空时自动填入
+    }
+  }catch(e){ /* 探测失败不影响调参 */ }
+  finally{ it.probing = false; updateFieldStates(); }
+}
+
+function fmtColors(c){
+  if(c >= (1<<24)) return '≥1677万';
+  if(c >= 10000) return (c/10000).toFixed(1) + '万';
+  return String(c);
+}
+
+// 根据图片格式判断各参数是否有意义：true=可调，false=该格式下无效（灰显）
+function imgAllows(info){
+  if(!info || !info.ok) return null;   // 未知 → 全部可调
+  const fmt = (info.format || '').toUpperCase();
+  if(info.frames > 1) return {q:false, c:true, f:true, r:true, d:true};   // 动图（GIF 等）：质量无效
+  if(fmt === 'JPEG' || fmt === 'JPG') return {q:true, c:false, f:false, r:false, d:false};
+  if(fmt === 'WEBP') return {q:true, c:false, f:false, r:false, d:false};
+  if(fmt === 'PNG' || fmt === 'BMP' || fmt === 'TIFF') return {q:false, c:true, f:false, r:false, d:true};
+  return {q:true, c:true, f:true, r:true, d:true};
+}
+
+// 刷新参数区字段状态：模式切换显隐 + 按格式灰显 + 当前值提示
+function updateFieldStates(){
+  const smart = (cmode === 'smart');
+  $('smartPane').style.display = smart ? '' : 'none';
+  $('manualPane').style.display = smart ? 'none' : '';
+  document.querySelectorAll('input[name=cmode]').forEach(r=>{ r.checked = (r.value === cmode); });
+
+  const info = (typeof paramScope === 'number' && queue[paramScope]) ? (queue[paramScope].info || null) : null;
+  const allows = imgAllows(info);
+
+  function setField(autoId, valId, ok, hintId){
+    const autoEl = $(autoId), valEl = $(valId);
+    const na = (allows && !ok);          // 该格式下此参数无意义
+    autoEl.disabled = na;
+    valEl.disabled = na || autoEl.checked;  // 勾选"智能降低"= 系统自动，数值灰显
+    const cell = $(hintId).closest('.dyncol');
+    const lbl = cell || $(hintId).closest('label');
+    if(lbl) lbl.classList.toggle('na', na);
+    return na;
+  }
+  const qNa = setField('autoQ','quality', !allows || allows.q, 'curQ');
+  const cNa = setField('autoC','colors', !allows || allows.c, 'curC');
+  const fNa = setField('autoF','frames', !allows || allows.f, 'curF');
+  const rNa = setField('autoR','fps', !allows || allows.r, 'curR');
+
+  // 抖动：与其他参数同规则，仅按格式灰显（JPG/WebP 不支持）
+  const dNa = allows ? !allows.d : false;
+  $('dither').disabled = dNa;
+  const dcell = $('curD').closest('.dyncol');
+  const dlbl = dcell || $('curD').closest('label');
+  if(dlbl) dlbl.classList.toggle('na', dNa);
+
+  // 当前值提示（仅单图模式且有探测数据时显示）
+  $('curQ').className = 'cur' + (qNa ? ' na' : '');
+  $('curC').className = 'cur' + (cNa ? ' na' : '');
+  $('curF').className = 'cur' + (fNa ? ' na' : '');
+  $('curR').className = 'cur' + (rNa ? ' na' : '');
+  $('curD').className = 'cur' + (dNa ? ' na' : '');
+  $('curQ').textContent = qNa ? '当前格式不支持质量参数' : '';
+  $('curD').textContent = dNa ? '当前格式不支持抖动' : '';
+  if(cNa){
+    $('curC').textContent = '当前格式不支持颜色数参数';
+  } else {
+    $('curC').innerHTML = (info && info.colors) ? '当前 <b>'+fmtColors(info.colors)+'</b> 色' : '';
+  }
+  if(fNa){
+    $('curF').textContent = '静态图，无帧数';
+  } else {
+    $('curF').innerHTML = (info && info.frames > 1) ? '当前 <b>'+info.frames+'</b> 帧' : '';
+  }
+  if(rNa){
+    $('curR').textContent = '静态图，无帧率';
+  } else {
+    $('curR').innerHTML = (info && info.fps) ? '当前 <b>'+info.fps+'</b> fps' : '';
+  }
+}
+
+// 压缩模式切换：手动调参 / 智能压缩
+document.querySelectorAll('input[name=cmode]').forEach(r=>{
+  r.addEventListener('change', () => {
+    cmode = r.value;
+    if(cmode === 'manual') saveCurrentScope(false);
+    updateFieldStates();
+    if(typeof paramScope === 'number' && queue[paramScope]) probeItem(queue[paramScope]);
+  });
+});
+function setSizeMode(mode){
+  sizemode = (mode === 'scale') ? 'scale' : 'dims';   // 只有两种：指定尺寸 / 按比例缩放
+  const scaleOn = (sizemode === 'scale');
+  const dimsOn = (sizemode === 'dims');
+  $('scaleBox').style.display = scaleOn ? 'flex':'none';
+  $('dimsBox').style.display = dimsOn ? 'flex':'none';
+  $('scalePct').disabled = !scaleOn;
+  $('width').disabled = !dimsOn;
+  $('height').disabled = !dimsOn;
+  $('lockRatio').disabled = !dimsOn;
+  document.querySelectorAll('input[name=sizemode]').forEach(r=>{ r.checked = (r.value===sizemode); });
+  autofillImageParams();
+}
+document.querySelectorAll('input[name=sizemode]').forEach(r=>{
+  r.onclick = () => setSizeMode(r.value);
+});
+
 function updateCount(){
   const files = queue.filter(i=>i.kind==='file').length;
   const urls = queue.filter(i=>i.kind==='url').length;
   $('count').textContent = `已添加 ${files} 个文件，链接 ${urls} 条`;
 }
 
-// ---------- 尺寸模式：缩放(%) / 指定尺寸 二选一 ----------
-function setSizeMode(mode){
-  sizemode = mode;
-  const scaleOn = (mode==='scale');
-  $('scaleBox').style.display = scaleOn ? 'flex':'none';
-  $('dimsBox').style.display = scaleOn ? 'none':'flex';
-  $('scalePct').disabled = !scaleOn;
-  $('width').disabled = scaleOn;
-  $('height').disabled = scaleOn;
-  $('lockRatio').disabled = scaleOn;
-  if(!scaleOn) autofillDims();
-}
-document.querySelectorAll('input[name=sizemode]').forEach(r=>{
-  r.onclick = () => setSizeMode(r.value);
-});
-
 function firstRatio(){
-  const it = queue.find(i=>i.w && i.h);
+  let it = null;
+  if(typeof paramScope === 'number' && queue[paramScope] && queue[paramScope].w && queue[paramScope].h){
+    it = queue[paramScope];
+  } else {
+    it = queue.find(i=>i.w && i.h);
+  }
   return it ? it.w / it.h : null;
 }
-// 切到「指定尺寸」且宽高为空时，用第一张图的原尺寸预填，方便微调
-function autofillDims(){
-  if(sizemode!=='dims') return;
-  const it = queue.find(i=>i.w && i.h);
+// 「指定尺寸」且宽高为空时预填尺寸：单图模式只用当前图（避免拿别的图尺寸误填），
+// 全局模式用第一张已知的图
+function autofillImageParams(){
+  const it = (typeof paramScope === 'number') ? queue[paramScope] : queue.find(i=>i.w && i.h);
   if(!it) return;
-  if(!$('width').value && !$('height').value){
-    $('width').value = it.w; $('height').value = it.h;
+  if(sizemode==='dims'){
+    if(it.w && it.h && !$('width').value && !$('height').value){
+      $('width').value = it.w; $('height').value = it.h;
+    }
+  }
+  // 动图：帧数/帧率空时自动填入当前值
+  const info = it.info;
+  if(info && info.frames > 1){
+    if(!$('frames').value) $('frames').value = info.frames;
+    if(!$('fps').value) $('fps').value = info.fps;
   }
 }
 // 保持比例：编辑一边自动算另一边
@@ -425,34 +939,113 @@ function bindLock(){
 }
 bindLock();
 
-// ---------- 文件夹选择（保存）----------
+// 参数输入框变化时立即保存到当前作用域（true = 用户实际修改，单图模式下标记"单独设置"）
+['target','targetUnit','colors','quality','frames','fps','scalePct','width','height','dither','autoQ','autoC','autoF','autoR'].forEach(id=>{
+  const el = $(id); if(!el) return;
+  el.addEventListener('change', () => { saveCurrentScope(true); updateFieldStates(); });
+});
+document.querySelectorAll('input[name=sizemode]').forEach(r=>{
+  r.addEventListener('change', () => { setSizeMode(r.value); saveCurrentScope(true); });
+});
+
+// scope bar 按钮
+$('backToGlobal').onclick = () => setParamScope('global');
+$('applyToAll').onclick = applyGlobalToAll;
+
+// ---------- 保存文件夹：原生选择 / 手动输入 / 完整路径显示 ----------
+let saveDir = '';        // 当前保存目录（空 = 默认 output）
+let defaultSaveDir = ''; // 后端默认 output 的完整路径
+
+(async function initSaveInfo(){
+  try{
+    const resp = await fetch(API + '/info');
+    const j = await resp.json();
+    defaultSaveDir = j.output_dir || '';
+    if(defaultSaveDir) $('saveDirInput').value = defaultSaveDir;  // 默认路径直接显示在输入框里
+  }catch(e){}
+})();
+
+// ---------- 指定保存路径（后端系统对话框，返回真实完整路径）----------
+// 由本地后端调用 Windows 原生文件夹选择框，选中的真实绝对路径回填到旁边输入框。
 $('pickDir').onclick = async () => {
-  if(!window.showDirectoryPicker){
-    alert('当前浏览器不支持文件夹选择，将改用默认 output 文件夹保存。'); return;
+  $('pickDir').disabled = true;
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 120000);
+  try{
+    const resp = await fetch(API + '/pick_dir', {signal: ctrl.signal});
+    const j = await resp.json();
+    if(j && j.abs){
+      saveDir = j.abs;
+      $('saveDirInput').value = j.abs;          // ★ 真实完整路径回填到旁边的输入框
+    }
+  }catch(e){
+    console.error('选择文件夹失败：', e);
+  } finally {
+    clearTimeout(timer);
+    $('pickDir').disabled = false;
   }
-  try{
-    saveDirHandle = await window.showDirectoryPicker();
-    $('savePath').innerHTML = '已选保存文件夹：<b>'+saveDirHandle.name+'</b>';
-  }catch(e){ if(e && e.name!=='AbortError') console.warn(e); }
 };
-async function clientSideSave(blob, fname){
-  if(!saveDirHandle) return false;
+
+async function applySaveDirInput(){
+  const v = $('saveDirInput').value.trim();
   try{
-    const fh = await saveDirHandle.getFileHandle(fname, {create:true});
-    const w = await fh.createWritable(); await w.write(blob); await w.close();
-    return true;
-  }catch(e){ return false; }
+    const resp = await fetch(API + '/resolve_dir?dir=' + encodeURIComponent(v));
+    const j = await resp.json();
+    if(j && j.abs){
+      saveDir = v ? j.abs : '';
+    }
+  }catch(e){}
 }
+$('saveDirInput').addEventListener('change', applySaveDirInput);
+$('saveDirInput').addEventListener('blur', applySaveDirInput);
+$('saveDirInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); applySaveDirInput(); } });
+
+$('resetDir').onclick = () => {
+  saveDir = '';
+  $('saveDirInput').value = defaultSaveDir;
+};
 
 // ---------- 读取选项为参数 ----------
+// 智能压缩：统一宽度 / 统一高度 互斥（填了一个自动清空另一个）
+$('smartW').addEventListener('input', ()=>{ if($('smartW').value) $('smartH').value=''; });
+$('smartH').addEventListener('input', ()=>{ if($('smartH').value) $('smartW').value=''; });
+
 function buildParams(){
+  // 智能压缩：统一目标体积（+可选统一宽度/高度，各图按自身比例等比缩放），
+  // 其余全部交给系统自动判断
+  if(cmode === 'smart'){
+    const size = parseFloat($('smartSize').value) || 500;
+    const mb = ($('smartUnit').value === 'kb') ? size/1024 : size;
+    const wv = parseInt($('smartW').value) || 0;
+    const hv = parseInt($('smartH').value) || 0;
+    const p = {
+      target: String(+(mb.toFixed(4))),
+      max_colors: '256', quality: '85',
+      auto_colors: '1', auto_quality: '1', auto_fit: '1',
+      allow_frame_skip: '1', dither: '0', fps: 0, frames: 0,
+      scale: 0,
+      width: wv,                          // 统一宽度（优先）
+      height: (!wv && hv) ? hv : 0,       // 或统一高度
+    };
+    if(saveDir) p.save_dir = saveDir;
+    return p;
+  }
+  const manualSize = parseFloat($('target').value) || 5120;
+  const manualTarget = ($('targetUnit').value === 'kb') ? manualSize/1024 : manualSize;
   const p = {
-    target: $('target').value,
-    max_colors: $('colors').value,
-    quality: $('quality').value,
-    allow_frame_skip: $('skip').checked ? '1':'0',
+    target: String(+(manualTarget.toFixed(4))),
+    max_colors: $('colors').value || '256',
+    quality: $('quality').value || '85',
+    auto_colors: $('autoC').checked ? '1':'0',
+    auto_quality: $('autoQ').checked ? '1':'0',
+    auto_fit: '0',
+    // 帧数或帧率任一勾选"智能降低"（系统自动）即允许抽帧
+    allow_frame_skip: ($('autoF').checked || $('autoR').checked) ? '1':'0',
+    frames: parseInt($('frames').value) || 0,
     dither: $('dither').checked ? '1':'0',
+    fps: parseFloat($('fps').value) || 0,
   };
+  if(saveDir) p.save_dir = saveDir;
   if(sizemode==='scale'){
     p.scale = (parseFloat($('scalePct').value) || 100) / 100;
     p.width = 0; p.height = 0;
@@ -469,15 +1062,45 @@ function buildParams(){
   return p;
 }
 
+// 每张图的独立参数 → 后端认识的参数对象（勾选"单独设置"才调用）
+function normPer(it){
+  const pt = it.pt || defaultPt();
+  const size = parseFloat(pt.target) || 5120;
+  const targetMb = (pt.targetUnit === 'mb') ? size : size/1024;
+  const p = {
+    target: String(+(targetMb.toFixed(4))),
+    max_colors: pt.colors || '256',
+    quality: pt.quality || '85',
+    auto_colors: pt.autoC ? '1':'0',
+    auto_quality: pt.autoQ ? '1':'0',
+    auto_fit: '0',
+    allow_frame_skip: (pt.autoF || pt.autoR) ? '1':'0',
+    frames: parseInt(pt.frames) || 0,
+    dither: pt.dither ? '1':'0',
+    fps: parseFloat(pt.fps) || 0,
+  };
+  if(pt.smode==='scale'){
+    p.scale = (parseFloat(pt.scale)||100)/100; p.width = 0; p.height = 0;
+  } else {
+    p.scale = 0; p.width = pt.width||0; p.height = pt.height||0;
+  }
+  return p;
+}
+
 // ======================================================================
 // 压缩入口（单张 / 批量统一）
 // ======================================================================
 $('go').onclick = async () => {
+  saveCurrentScope();                       // 保存当前正在编辑的参数
   if(activeMode==='url'){ syncUrlBox(); }   // 确保文本框最新内容已进入队列
   const files = queue.filter(i=>i.kind==='file');
   const urls = queue.filter(i=>i.kind==='url');
   if(files.length===0 && urls.length===0){ $('err').textContent='请先添加图片、文件夹或链接'; return; }
-  const params = buildParams();
+  // 压缩前切回全局参数视图，确保 buildParams 读到全局参数
+  if(paramScope !== 'global') setParamScope('global');
+  let params;
+  try{ params = buildParams(); }
+  catch(e){ $('err').textContent = e.message; return; }
   if(queue.length===1){ await compressSingle(queue[0], params); }
   else { await compressBatch(params); }
 };
@@ -487,6 +1110,8 @@ function hideProg(){ $('prog').classList.remove('show'); }
 
 async function compressSingle(item, params){
   $('err').textContent='';
+  // 每图独立参数：单张时同样生效（覆盖全局对应字段）；智能模式统一参数，忽略单图设置
+  if(item.custom && cmode!=='smart'){ params = Object.assign({}, params, normPer(item)); }
   let body='', fallback=item.name, qs=new URLSearchParams(params);
   if(item.kind==='url'){ qs.set('url', item.url); }
   else { qs.set('name', item.name); body=item.file; }
@@ -502,20 +1127,30 @@ async function compressSingle(item, params){
     const fname = resp.headers.get('X-Filename') || ('compressed_'+fallback);
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
-    // 预览：原图 + 压缩后
+    // 单图模式：显示顶部结果区
+    $('meta').style.display='';
+    $('note').style.display='';
+    $('imgs').style.display='';
+    $('bar').style.display='';
+    // 预览：原图 + 压缩后（仅悬停放大，不点击）
     const origSrc = item.kind==='url' ? item.url : (item._objUrl || (item._objUrl = URL.createObjectURL(item.file)));
+    const fn = esc(item.name);
     $('imgs').innerHTML =
-      `<figure><img src="${origSrc}" alt="原图"><figcaption>原图 ${meta.width_in}×${meta.height_in} · ${meta.size_in_mb} MB</figcaption></figure>`+
-      `<figure><img src="${url}" alt="压缩后"><figcaption>压缩后 ${meta.width_out}×${meta.height_out} · ${meta.size_mb} MB</figcaption></figure>`;
+      `<figure><div class="img-wrap"><img src="${origSrc}" alt="原图"><span class="img-caption">${fn}</span></div><figcaption>原图 ${meta.width_in}×${meta.height_in} · ${meta.size_in_mb} MB</figcaption></figure>`+
+      `<figure><div class="img-wrap"><img src="${url}" alt="压缩后"><span class="img-caption">${fn}</span></div><figcaption>压缩后 ${meta.width_out}×${meta.height_out} · ${meta.size_mb} MB</figcaption></figure>`;
+    // 悬停预览大图
+    $('imgs').querySelectorAll('.img-wrap img').forEach(img=>{
+      bindHoverPreview(img, img.src);
+    });
     buildMeta(meta);
     const okFlag = meta.ok==='1';
     $('note').className = 'note '+(okFlag?'ok':'warn');
     $('note').textContent = meta.note || '';
-    const t = parseFloat($('target').value);
+    const t = parseFloat(params.target) || 1;
     const pct = Math.min(100, Math.round(parseFloat(meta.size_mb)/t*100));
     $('bar').style.width = pct+'%'; $('bar').style.background = okFlag ? 'var(--ok)':'var(--warn)';
     hideBatch();
-    if(saveDirHandle){ await clientSideSave(blob, fname); }
+    $('resultTitle').innerHTML = '<span class="badge">📊</span> 压缩结果 · ' + esc(item.name);
     $('resultTitle').style.display='flex';
     $('result').classList.add('show');
     $('result').scrollIntoView({behavior:'smooth', block:'nearest'});
@@ -525,23 +1160,71 @@ async function compressSingle(item, params){
 
 async function compressBatch(params){
   $('err').textContent='';
+  // 批量模式：隐藏顶部单图结果区（meta / note / 单图对比 / 进度条），只保留批量表格
+  $('meta').innerHTML=''; $('meta').style.display='none';
+  $('note').style.display='none';
+  $('imgs').innerHTML=''; $('imgs').style.display='none';
+  $('bar').style.display='none';
+  hideBatch();
+  $('batchSummary').innerHTML = '';
+  $('batchSummary').style.display='none';
+  $('tblWrap').style.display='none';
   const fd = new FormData();
   queue.filter(i=>i.kind==='file').forEach(i=>fd.append('files', i.file, i.name));
   const urlList = queue.filter(i=>i.kind==='url').map(i=>i.url);
   fd.append('urls', urlList.join('\n'));
   fd.append('params', JSON.stringify(params));
+  // 每图独立参数：顺序 = 文件在前、链接在后，与后端 items 顺序一致；null = 跟随全局
+  // 智能模式：全部统一参数，不发送 per_params
+  const perList = [];
+  if(cmode !== 'smart'){
+    queue.filter(i=>i.kind==='file').forEach(i=>perList.push(i.custom ? normPer(i) : null));
+    queue.filter(i=>i.kind==='url').forEach(i=>perList.push(i.custom ? normPer(i) : null));
+    if(perList.some(Boolean)) fd.append('per_params', JSON.stringify(perList));
+  }
   $('go').disabled=true; $('go').textContent='压缩中…';
   showProg('正在压缩（共 '+queue.length+' 个）…');
+
+  const manifest = [];
   try{
     const resp = await fetch(API + '/batch', {method:'POST', body: fd});
     if(!resp.ok) throw new Error(await resp.text());
-    const manifest = JSON.parse(decodeURIComponent(resp.headers.get('X-Batch-Manifest')||'[]'));
-    const zipBlob = await resp.blob();
-    renderBatchTable(manifest, zipBlob);
-    $('imgs').innerHTML='';
-    if(saveDirHandle){ await clientSideSave(zipBlob, 'batch_compressed.zip'); }
-    $('resultTitle').style.display='flex';
-    $('result').classList.add('show');
+    if(!resp.body) throw new Error('浏览器不支持流式响应');
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buf = '';
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += decoder.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop(); // 最后一行可能不完整，留到下次
+      for(const line of lines){
+        if(!line.trim()) continue;
+        let obj;
+        try{ obj = JSON.parse(line); }catch(e){ continue; }
+        if(obj.done){
+          // 汇总行，最后处理
+          manifest._summary = obj;
+        } else if(obj.entry){
+          manifest.push(obj.entry);
+          showProg('正在压缩（'+manifest.length+' / '+obj.total+'）…');
+          renderBatchTable(manifest);
+          $('resultTitle').style.display='flex';
+          $('result').classList.add('show');
+        }
+      }
+    }
+    // 处理缓冲区剩余内容
+    if(buf.trim()){
+      try{
+        const obj = JSON.parse(buf);
+        if(obj.done) manifest._summary = obj;
+        else if(obj.entry) manifest.push(obj.entry);
+      }catch(e){}
+    }
+    const summary = manifest._summary || {};
+    // 不再显示"已保存到xxx"路径提示
     $('result').scrollIntoView({behavior:'smooth', block:'nearest'});
   }catch(e){ $('err').textContent='批量压缩失败：'+e.message; }
   finally{ hideProg(); $('go').disabled=false; $('go').textContent='开始压缩'; }
@@ -552,9 +1235,14 @@ function buildMeta(res){
   const arrows = [
     ['尺寸', res.width_in+'×'+res.height_in, res.width_out+'×'+res.height_out],
     ['帧数', res.frames_in, res.frames_out],
+  ];
+  if(res.frames_in > 1){
+    arrows.push(['帧率', (res.fps_in||0)+' fps', (res.fps_out||0)+' fps']);
+  }
+  arrows.push(
     ['色数', res.colors_in, res.colors_out],
     ['体积', res.size_in_mb+' MB', res.size_mb+' MB'],
-  ];
+  );
   arrows.forEach(([k,a,b])=>{
     const s=document.createElement('span'); s.className='chip';
     s.innerHTML = k+': <b>'+a+'</b> → <b>'+b+'</b>'; m.appendChild(s);
@@ -565,7 +1253,7 @@ function buildMeta(res){
 function hideBatch(){
   $('batchSummary').style.display='none'; $('tblWrap').style.display='none';
 }
-function renderBatchTable(manifest, zipBlob){
+function renderBatchTable(manifest){
   const body = $('batchBody'); body.innerHTML='';
   let okN=0;
   manifest.forEach(r=>{
@@ -575,13 +1263,23 @@ function renderBatchTable(manifest, zipBlob){
     const fmt = (r.format_in||'')+' → '+(r.format_out||'');
     const dims = (r.width_in||'?')+'×'+(r.height_in||'?')+' → '+(r.width_out||'?')+'×'+(r.height_out||'?');
     const fr = (r.frames_in??'?')+' → '+(r.frames_out??'?');
+    const fpr = (r.fps_in!=null ? r.fps_in : '?')+' → '+(r.fps_out!=null ? r.fps_out : '?');
     const col = (r.colors_in??'?')+' → '+(r.colors_out??'?');
     const sz = (r.size_in_mb??'?')+' MB → '+(r.size_mb??'?')+' MB';
-    tr.innerHTML = `<td class="name">${esc(r.name)}</td>`+
+    const prevLarge = r.preview_large || r.preview || '';
+    // 预览图列：压缩结果缩略图（悬停放大）+ 浮动文件名
+    const prevHtml = r.preview
+      ? `<div class="prev-wrap"><img loading="lazy" src="${r.preview}" alt=""><span class="img-caption batch-caption">${esc(r.name)}</span></div>`
+      : '<span style="color:var(--sub)">—</span>';
+    tr.innerHTML = `<td class="prev">${prevHtml}</td>`+
       `<td>${esc(fmt)}</td><td>${esc(dims)}</td><td>${esc(fr)}</td>`+
-      `<td>${esc(col)}</td><td>${esc(sz)}</td>`+
+      `<td>${esc(fpr)}</td><td>${esc(col)}</td><td>${esc(sz)}</td>`+
       `<td><span class="pill ${ok?'ok':'bad'}">${ok?'成功':'失败'}</span>`+
       `${r.note?`<br><small style="color:#92400e">${esc(r.note)}</small>`:''}</td>`;
+    const pimg = tr.querySelector('.prev-wrap img');
+    if(pimg){
+      bindHoverPreview(pimg, prevLarge);
+    }
     body.appendChild(tr);
   });
   $('batchSummary').innerHTML = `共 <b>${manifest.length}</b> 个，成功 <b>${okN}</b> 个。`+
@@ -592,17 +1290,44 @@ function renderBatchTable(manifest, zipBlob){
 function sumKey(arr,k){ let s=0; arr.forEach(r=>{ s+=parseFloat(r[k]||0)||0; }); return s.toFixed(2); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
+// 鼠标悬停预览大图（居中，自适应窗口）
+function showHoverPreview(src){
+  if(!src) return;
+  $('hoverPreviewImg').src = src;
+  $('hoverPreview').classList.add('show');
+}
+function hideHoverPreview(){
+  $('hoverPreview').classList.remove('show');
+  $('hoverPreviewImg').src = '';
+}
+function bindHoverPreview(el, src){
+  if(!el || !src) return;
+  el.onmouseenter = () => showHoverPreview(src);
+  el.onmouseleave = () => hideHoverPreview();
+}
+
 $('reset').onclick = () => {
   hideProg();
-  queue=[]; renderQueue(); updateCount();
+  queue.forEach(it=>{ if(it._objUrl) URL.revokeObjectURL(it._objUrl); });
+  queue=[]; paramScope='global';
+  renderQueue(); updateCount();
   $('url').value=''; $('err').textContent='';
-  $('width').value=''; $('height').value='';
-  $('result').classList.remove('show'); $('resultTitle').style.display='none'; hideBatch();
+  $('result').classList.remove('show'); $('resultTitle').innerHTML='<span class="badge">📊</span> 压缩结果'; $('resultTitle').style.display='none'; hideBatch();
+  cmode = 'smart';
+  $('smartSize').value = ''; $('smartUnit').value = 'kb';
+  $('smartW').value = ''; $('smartH').value = '';
+  globalParams = {target:'', targetUnit:'kb', max_colors:'256', quality:'', autoQ:false, autoC:false, autoF:false, autoR:false, frames:'', fps:'', smode:'dims', scale:'100', width:'', height:'', dither:false};
+  fillFormParams(globalParams);
+  updateScopeBar();
+  updateFieldStates();
 };
 
 // 初始化
-setSizeMode('dims');
+fillFormParams(globalParams);
+updateScopeBar();
 updateCount();
+updateFieldStates();
 </script>
+<!-- 浏览器原生目录选择 input（隐藏，由「选择保存文件夹」按钮触发） -->
 </body>
 </html>
