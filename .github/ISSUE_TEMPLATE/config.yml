@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 项目 README
+    url: https://github.com/xuxu-ya/image-compressor
+    about: 使用与协作说明，先看看这里
