@@ -361,7 +361,7 @@
     <div class="saverow" style="margin-top:12px">
       <button type="button" class="ghost mini" id="pickDir">💾 选择保存文件夹</button>
       <input type="text" id="saveDirInput" placeholder="或直接输入路径（留空 = 默认 output 文件夹）" spellcheck="false">
-      <button type="button" class="ghost mini" id="resetDir">恢复默认</button>
+      <button type="button" class="ghost mini" id="openDir">📂 打开文件夹</button>
     </div>
     <div class="err" id="err"></div>
   </div>
@@ -390,14 +390,20 @@
 
 <!-- 动图编码库（仅 GIF / APNG 需要；静态图走 Canvas，完全离线） -->
 <script src="https://cdn.jsdelivr.net/npm/omggif@1.0.10/omggif.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.2/upng.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.js"></script>
 
 <!-- ================= 纯前端压缩引擎（替代原后端 app.py） ================= -->
 <script>
 window.ENG = (function(){
   const hasGIF = () => typeof GifReader !== 'undefined';
   const hasPNG = () => typeof UPNG !== 'undefined';
+  let gifenc = null;
+  async function loadGifenc(){
+    if(gifenc) return;
+    try{ gifenc = await import('https://cdn.jsdelivr.net/npm/gifenc@1.0.3/+esm'); }
+    catch(e){ throw new Error('GIF 编码库加载失败：' + e.message); }
+  }
   function fmtOf(type, name){
     const n=(name||'').toLowerCase();
     if(/\.gif$/i.test(n)||type==='image/gif') return 'GIF';
@@ -428,12 +434,12 @@ window.ENG = (function(){
     for(let i=0;i<r.numFrames();i++){r.decodeAndBlitFrameRGBA(i,px);frames.push(new Uint8ClampedArray(px));delays.push((r.frameInfo(i).delay||10)*10);}
     return {w,h,frames,delays,animated:true};
   }
-  function decodeAPNG(buf){ const img=UPNG.decode(buf); const fr=UPNG.toRGBA8(img); const delays=(img.frames||[]).map(f=>f.delay!==undefined?f.delay:(f.t!==undefined?f.t:100)); return {w:img.width,h:img.height,frames:fr,delays,animated:true}; }
+  function decodeAPNG(buf){ const img=UPNG.decode(buf); const fr=UPNG.toRGBA8(img).map(b=>new Uint8ClampedArray(b)); const delays=(img.frames||[]).map(f=>f.delay!==undefined?f.delay:(f.t!==undefined?f.t:100)); return {w:img.width,h:img.height,frames:fr,delays,animated:true}; }
   async function decodeStatic(buf){ const bmp=await createImageBitmap(new Blob([buf])); return {w:bmp.width,h:bmp.height,bitmap:bmp,animated:false}; }
 
   function encodeGIF(frames,w,h,delays,colors){
-    const gif=gifenc.GIF();
-    for(let i=0;i<frames.length;i++){ const pal=gifenc.quantize(frames[i],colors,{format:'rgb565'}); const idx=gifenc.applyPalette(frames[i],pal,'rgb565'); gif.writeFrame(idx,w,h,{palette:pal,delay:delays[i]||100}); }
+    const gif=new gifenc.GIFEncoder();
+    for(let i=0;i<frames.length;i++){ const pal=gifenc.quantize(frames[i],colors); const idx=gifenc.applyPalette(frames[i],pal); gif.writeFrame(idx,w,h,{palette:pal,delay:delays[i]||100}); }
     gif.finish(); const bytes=gif.bytes();
     return {blob:new Blob([bytes],{type:'image/gif'}),bytes:bytes.length};
   }
@@ -453,6 +459,7 @@ window.ENG = (function(){
   async function compress(item, params){
     const {buf,type}=await bufOf(item);
     const fmt=fmtOf(type,item.name);
+    if(fmt==='GIF' || fmt==='PNG') await loadGifenc(); // GIF/APNG 输出依赖 gifenc
     const targetBytes=Math.max(1,Math.round(parseFloat(params.target||'5')*1024*1024));
     const rawSize=buf.length;
     let dec;
@@ -1114,7 +1121,7 @@ let dirHandle = null;    // File System Access API 选中的目录句柄（https
 (async function initSaveInfo(){
   defaultSaveDir = '';
   $('saveDirInput').value = '';
-  $('saveDirInput').placeholder = '压缩后自动下载；或在 https 环境下点「选择保存文件夹」直接写入';
+  $('saveDirInput').placeholder = '点击左侧按钮选择保存文件夹（浏览器限制，无法显示完整路径）';
 })();
 
 // 压缩结果输出：若已选目录（https 环境）直接写入；否则自动下载到本地
@@ -1141,17 +1148,17 @@ async function saveOne(it, blob, fmt){
   setTimeout(()=>URL.revokeObjectURL(a.href), 6000); a.remove();
 }
 
-// 选择保存文件夹：https/localhost 下直接写入；其它环境提示改用下载
+// 选择保存文件夹：https/localhost 下直接写入；其它环境提示无法使用
 $('pickDir').onclick = async () => {
   if(!fsSupported){
-    alert('当前环境（非 https / localhost）不支持直接写文件夹，压缩后将自动下载到本地。\n若需直接写入，请用 GitHub Pages 网址（https）打开本工具。');
+    alert('当前环境不支持直接写文件夹，请在 https / localhost / GitHub Pages 环境下使用。');
     return;
   }
   try{
     const h = await window.showDirectoryPicker();
     dirHandle = h;
     saveDir = h.name;
-    $('saveDirInput').value = '📁 ' + h.name + '（已选，压缩后直接写入）';
+    $('saveDirInput').value = h.name;
   }catch(e){
     if(e.name !== 'AbortError') console.error('选择文件夹失败：', e);
   }
@@ -1161,9 +1168,19 @@ $('saveDirInput').addEventListener('change', ()=>{ saveDir = $('saveDirInput').v
 $('saveDirInput').addEventListener('blur', ()=>{ saveDir = $('saveDirInput').value.trim(); });
 $('saveDirInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveDir = $('saveDirInput').value.trim(); } });
 
-$('resetDir').onclick = () => {
-  dirHandle = null; saveDir = '';
-  $('saveDirInput').value = '';
+$('openDir').onclick = () => {
+  if(!dirHandle && !$('saveDirInput').value.trim()){
+    alert('请先选择保存文件夹');
+    return;
+  }
+  const path = $('saveDirInput').value.trim();
+  // 如果输入框里是绝对路径（用户手动填写），尝试用 file:// 打开
+  if(/^[A-Za-z]:[\\/]|^\//.test(path)){
+    try{ window.open('file:///' + path.replace(/\\/g,'/'), '_blank'); }catch(e){}
+    return;
+  }
+  // 否则只有文件夹名，浏览器安全限制下无法直接打开系统文件夹
+  alert('当前已选文件夹：' + (dirHandle ? dirHandle.name : path) + '\n\n浏览器安全限制，无法直接打开系统文件夹。如需查看，请手动前往该目录。');
 };
 
 // ---------- 读取选项为参数 ----------
@@ -1257,6 +1274,7 @@ $('go').onclick = async () => {
   const files = queue.filter(i=>i.kind==='file');
   const urls = queue.filter(i=>i.kind==='url');
   if(files.length===0 && urls.length===0){ $('err').textContent='请先添加图片、文件夹或链接'; return; }
+  if(!dirHandle){ alert('请先选择保存文件夹'); return; }
   // 压缩前切回全局参数视图，确保 buildParams 读到全局参数
   if(paramScope !== 'global') setParamScope('global');
   let params;
