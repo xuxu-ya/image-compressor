@@ -2064,8 +2064,15 @@ window.ENG = (function(){
         if(!animLikely){
           try{ const blob=await loadViaImg(url); return {buf:new Uint8Array(await blob.arrayBuffer()), type:blob.type||''}; }catch(_){}
         }
-        // 3) 仍失败：给出明确、可操作的中文提示
-        throw new Error('无法下载该图片链接（多半是服务器防盗链 / 跨域 CORS 限制）。请先把图片下载到本地，再用「上传文件」模式压缩。');
+        // 3) 仍失败：回退到本地 URL 代理（绕过浏览器 CORS 限制）
+        try{
+          const r=await fetch('http://127.0.0.1:8001/fetch_url?url='+encodeURIComponent(url), {signal: AbortSignal.timeout(15000)});
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return {buf:new Uint8Array(await r.arrayBuffer()), type:r.headers.get('content-type')||''};
+        }catch(_2){
+          // 4) 代理也没起或也失败：给出明确、可操作的中文提示
+          throw new Error('无法下载该图片链接（多半是服务器防盗链 / 跨域 CORS 限制）。可双击启动 url_proxy.py 后重试，或先把图片下载到本地再用「上传文件」模式压缩。');
+        }
       }
     }
     return {buf:new Uint8Array(await item.file.arrayBuffer()), type:item.file.type};
