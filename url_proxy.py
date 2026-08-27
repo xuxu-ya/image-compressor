@@ -95,3 +95,9 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("\nStopped.")
             sys.exit(0)
+
+
+def make_server(host="127.0.0.1", port=PORT):
+    """供 run_proxy.py 复用：返回一个已绑定但未启动的 TCPServer 实例。"""
+    return socketserver.TCPServer((host, port), Handler)
+
