@@ -2051,8 +2051,39 @@ window.ENG = (function(){
     const t=(type||'').split('/')[1]; return t? t.toUpperCase():'UNKNOWN';
   }
   async function bufOf(item){
-    if(item.kind==='url'){ const r=await fetch(item.url); return {buf:new Uint8Array(await r.arrayBuffer()), type:r.headers.get('content-type')||''}; }
+    if(item.kind==='url'){
+      const url=item.url;
+      // 1) 直接 fetch（同域 / 允许跨域时可用）
+      try{
+        const r=await fetch(url);
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return {buf:new Uint8Array(await r.arrayBuffer()), type:r.headers.get('content-type')||''};
+      }catch(e){
+        // 2) 静态图回退：<img crossOrigin> + canvas 读取像素（仅对允许匿名跨域的服务器有效；动图会丢帧，故跳过）
+        const animLikely=/\.(gif|apng)(\?|$)/i.test(url);
+        if(!animLikely){
+          try{ const blob=await loadViaImg(url); return {buf:new Uint8Array(await blob.arrayBuffer()), type:blob.type||''}; }catch(_){}
+        }
+        // 3) 仍失败：给出明确、可操作的中文提示
+        throw new Error('无法下载该图片链接（多半是服务器防盗链 / 跨域 CORS 限制）。请先把图片下载到本地，再用「上传文件」模式压缩。');
+      }
+    }
     return {buf:new Uint8Array(await item.file.arrayBuffer()), type:item.file.type};
+  }
+  // 通过 <img crossOrigin=anonymous> 加载后用 canvas 读出像素，绕过 fetch 的 CORS 读取限制（仅对允许匿名跨域的服务器有效）
+  function loadViaImg(url){
+    return new Promise((resolve,reject)=>{
+      const img=new Image(); img.crossOrigin='anonymous';
+      img.onload=()=>{
+        try{
+          const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+          c.getContext('2d').drawImage(img,0,0);
+          c.toBlob(b=> b?resolve(b):reject(new Error('canvas 导出失败')), 'image/png');
+        }catch(err){ reject(err); }
+      };
+      img.onerror=()=>reject(new Error('img 加载失败'));
+      img.src=url;
+    });
   }
   function estColors(rgba){
     const set=new Set(); const len=rgba.length;
