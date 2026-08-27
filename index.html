@@ -2856,6 +2856,32 @@ function outName(it, fmt){
   const ext=extMap[(fmt||'').toUpperCase()] || (dot>0? it.name.slice(dot+1):'bin');
   return base+'.'+ext;
 }
+
+// 兜底：用系统文件选择器让用户选保存位置（单个文件）
+async function saveViaFilePicker(it, blob, fmt){
+  if(!('showSaveFilePicker' in window)) return false;
+  try{
+    const ext = (outName(it, fmt).split('.').pop() || fmt || 'png').toLowerCase();
+    const h = await window.showSaveFilePicker({
+      suggestedName: outName(it, fmt),
+      types: [{accept: {'image/*': ['.'+ext]}}]
+    });
+    const w = await h.createWritable(); await w.write(blob); await w.close();
+    return true;
+  }catch(e){
+    if(e.name !== 'AbortError') console.error('文件选择器保存失败：', e);
+    return false;
+  }
+}
+
+// 兜底：在新标签页打开 blob，提示用户右键保存
+function openBlobForManualSave(it, blob, fmt, msg){
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(()=>URL.revokeObjectURL(url), 30000);
+  $('err').textContent = msg;
+}
+
 async function saveOne(it, blob, fmt){
   it._outFmt = fmt;
   if(dirHandle){
@@ -2863,13 +2889,19 @@ async function saveOne(it, blob, fmt){
       const h = await dirHandle.getFileHandle(outName(it, fmt), {create:true});
       const w = await h.createWritable(); await w.write(blob); await w.close();
       return;
-    }catch(e){ /* 写入失败则退回下载 */ }
+    }catch(e){
+      console.error('写入已选目录失败：', e);
+      // 若目录写入失败，先尝试弹出系统保存对话框兜底
+      const saved = await saveViaFilePicker(it, blob, fmt);
+      if(saved) return;
+      // 再兜底：打开 blob 页让用户右键保存，并说明原因
+      openBlobForManualSave(it, blob, fmt,
+        '保存失败：无法写入 "'+(dirHandle.name||'已选文件夹')+'"。可能原因：1）选择文件夹时未开启"保存更改 / Save changes"权限；2）目录只读。已在新标签页打开结果，请右键"图片另存为"手动保存，或重新选择文件夹并开启写入权限。');
+      return;
+    }
   }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = outName(it, fmt);
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 6000); a.remove();
+  // 理论上不会走到这里（go.onclick 已拦截未选目录的情况），保留兜底
+  openBlobForManualSave(it, blob, fmt, '未选择保存文件夹，无法自动保存。已在新标签页打开结果，请右键"图片另存为"保存，或先点击"选择保存文件夹"。');
 }
 
 // 选择保存文件夹：https/localhost 下直接写入；其它环境提示无法使用
@@ -2879,7 +2911,7 @@ $('pickDir').onclick = async () => {
     return;
   }
   try{
-    const h = await window.showDirectoryPicker();
+    const h = await window.showDirectoryPicker({ mode: 'readwrite' });
     dirHandle = h;
     saveDir = h.name;
     $('saveDirInput').value = h.name;
