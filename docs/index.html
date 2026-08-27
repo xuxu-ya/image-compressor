@@ -66,6 +66,12 @@
   .tabhint{color:var(--sub);font-size:12px;margin:10px 0 0;line-height:1.5}
   .fmtnote{color:var(--sub);font-size:12px;margin-left:4px;white-space:nowrap}
   .dithwrap{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;white-space:nowrap}
+  .proxystatus{display:flex;align-items:center;gap:6px;margin:8px 0 2px;font-size:12px;color:var(--sub)}
+  .proxystatus .dot{width:8px;height:8px;border-radius:50%;background:#9ca3af}
+  .proxystatus.ok .dot{background:#22c55e}
+  .proxystatus.err .dot{background:#ef4444}
+  .proxystatus.ok{color:#15803d}
+  .proxystatus.err{color:#b91c1c}
   /* ---------- 参数行：[☑自动] [数值] + 当前值提示 ---------- */
   .prow{display:flex;gap:6px;align-items:center}
   .prow input[type=number]{flex:1;min-width:56px}
@@ -205,6 +211,7 @@
 
     <div class="tabpane" id="paneUrl" style="display:none">
       <textarea id="url" placeholder="https://a.com/1.gif&#10;https://a.com/2.png&#10;https://a.com/3.jpg"></textarea>
+      <div class="proxystatus" id="proxyStatus"><span class="dot"></span><span id="proxyStatusText">检测本地代理中...</span></div>
       <div class="divider">或 上传表格（CSV，含图片链接列）</div>
       <div class="row">
         <button type="button" class="ghost mini" id="pickCsv">📄 上传 CSV 表格</button>
@@ -2050,6 +2057,24 @@ window.ENG = (function(){
     if(/\.tiff?$/i.test(n)||type==='image/tiff') return 'TIFF';
     const t=(type||'').split('/')[1]; return t? t.toUpperCase():'UNKNOWN';
   }
+  async function checkProxy(){
+    try{
+      const r=await fetch('http://127.0.0.1:8001/ping', {method:'HEAD', signal: AbortSignal.timeout(3000)});
+      return r.ok;
+    }catch(e){ return false; }
+  }
+  function setProxyStatus(ok, text){
+    const el=$('proxyStatus'), txt=$('proxyStatusText');
+    if(!el || !txt) return;
+    el.className='proxystatus '+(ok?'ok':'err');
+    txt.textContent = text || (ok?'本地代理运行中（图片链接模式可用）':'本地代理未启动：请双击 start_with_proxy.bat');
+  }
+  async function updateProxyStatus(){
+    const ok = await checkProxy();
+    setProxyStatus(ok);
+    return ok;
+  }
+
   async function bufOf(item){
     if(item.kind==='url'){
       const url=item.url;
@@ -2065,13 +2090,23 @@ window.ENG = (function(){
           try{ const blob=await loadViaImg(url); return {buf:new Uint8Array(await blob.arrayBuffer()), type:blob.type||''}; }catch(_){}
         }
         // 3) 仍失败：回退到本地 URL 代理（绕过浏览器 CORS 限制）
+        let proxyErr='';
         try{
-          const r=await fetch('http://127.0.0.1:8001/fetch_url?url='+encodeURIComponent(url), {signal: AbortSignal.timeout(15000)});
-          if(!r.ok) throw new Error('HTTP '+r.status);
+          const proxyUrl='http://127.0.0.1:8001/fetch_url?url='+encodeURIComponent(url);
+          const r=await fetch(proxyUrl, {signal: AbortSignal.timeout(60000)});
+          if(!r.ok){
+            const body=await r.text().catch(()=>'');
+            proxyErr='代理返回错误 '+r.status+'：'+(body||r.statusText);
+            throw new Error(proxyErr);
+          }
           return {buf:new Uint8Array(await r.arrayBuffer()), type:r.headers.get('content-type')||''};
         }catch(_2){
           // 4) 代理也没起或也失败：给出明确、可操作的中文提示
-          throw new Error('无法下载该图片链接（浏览器被 CORS/防盗链限制）。方案：1）双击 start_with_proxy.bat 一键启动代理后重试；2）在浏览器中右键图片→复制图片，然后回到「上传文件」页按 Ctrl+V 粘贴压缩；3）先下载到本地再上传。');
+          const isConnError = (_2 && (_2.name==='TypeError' || /fetch|NetworkError|Failed to fetch/i.test(String(_2.message||_2))));
+          if(!proxyErr && isConnError){
+            throw new Error('本地代理未启动。请保持 start_with_proxy.bat 弹出的黑色窗口不关闭，或重新双击 start_with_proxy.bat 后再试。也可以：1）在浏览器中右键图片→复制图片，回到「上传文件」页按 Ctrl+V 粘贴压缩；2）先下载到本地再上传。');
+          }
+          throw new Error('无法下载该图片链接（浏览器被 CORS/防盗链限制'+(proxyErr?'；'+proxyErr:'')+'）。方案：1）确认 start_with_proxy.bat 的黑色代理窗口未关闭；2）在浏览器中右键图片→复制图片，回到「上传文件」页按 Ctrl+V 粘贴压缩；3）先下载到本地再上传。');
         }
       }
     }
@@ -2256,6 +2291,10 @@ window.ENG = (function(){
       format_in:fmt, format_out:best.outFmt, note };
     return {blob:best.blob, meta, preview:URL.createObjectURL(best.blob)};
   }
+  // 暴露给外层脚本使用（Tab 切换时检测代理状态）
+  window.checkProxy = checkProxy;
+  window.setProxyStatus = setProxyStatus;
+  window.updateProxyStatus = updateProxyStatus;
   return {probe, compress, fmtOf};
 })();
 </script>
@@ -2287,9 +2326,13 @@ function switchTab(mode){
   $('paneUrl').style.display  = mode==='url'  ? '' : 'none';
   if(typeof paramScope === 'number' && !queue[paramScope]) setParamScope('global');
   renderQueue(); updateCount();
+  if(mode === 'url') updateProxyStatus();
 }
 $('tabFile').onclick = () => switchTab('file');
 $('tabUrl').onclick = () => switchTab('url');
+if($('proxyStatus')) $('proxyStatus').onclick = () => { $('proxyStatusText').textContent='检测本地代理中...'; updateProxyStatus(); };
+// 页面加载后检测一次代理状态
+setTimeout(updateProxyStatus, 300);
 
 // 拖拽区可直接点击选择文件；文件夹通过拖拽添加
 // ---------- 拖拽（文件夹递归 + 多文件）----------

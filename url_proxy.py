@@ -17,15 +17,35 @@ USER_AGENT = (
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
+    def _cors_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "*")
+
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "*")
+        self._cors_headers()
         self.end_headers()
+
+    def do_HEAD(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/ping":
+            self.send_response(200)
+            self._cors_headers()
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            return
+        self.send_error(404)
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/ping":
+            self.send_response(200)
+            self._cors_headers()
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(b"pong")
+            return
         if parsed.path != "/fetch_url":
             self.send_error(404, "Only /fetch_url is supported")
             return
@@ -43,11 +63,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
                 },
             )
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=60) as resp:
                 data = resp.read()
                 ct = resp.headers.get("Content-Type", "application/octet-stream")
                 self.send_response(200)
-                self.send_header("Access-Control-Allow-Origin", "*")
+                self._cors_headers()
                 self.send_header("Content-Type", ct)
                 self.send_header("Content-Length", len(data))
                 self.end_headers()
@@ -58,13 +78,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_error(502, f"Fetch failed: {e}")
 
     def log_message(self, format, *args):
-        pass
+        # 打印到控制台，方便用户排查
+        sys.stderr.write("%s - - [%s] %s\n" % (
+            self.address_string(),
+            self.log_date_time_string(),
+            format % args,
+        ))
 
 
 if __name__ == "__main__":
     with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
         print(f"URL proxy running at http://127.0.0.1:{PORT}")
-        print("按 Ctrl+C 停止")
+        print("按 Ctrl+C 停止（请勿关闭此窗口，否则图片链接模式会失效）")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
