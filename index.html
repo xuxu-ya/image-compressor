@@ -2071,7 +2071,7 @@ window.ENG = (function(){
           return {buf:new Uint8Array(await r.arrayBuffer()), type:r.headers.get('content-type')||''};
         }catch(_2){
           // 4) 代理也没起或也失败：给出明确、可操作的中文提示
-          throw new Error('无法下载该图片链接（多半是服务器防盗链 / 跨域 CORS 限制）。可双击启动 url_proxy.py 后重试，或先把图片下载到本地再用「上传文件」模式压缩。');
+          throw new Error('无法下载该图片链接（浏览器被 CORS/防盗链限制）。方案：1）双击 start_with_proxy.bat 一键启动代理后重试；2）在浏览器中右键图片→复制图片，然后回到「上传文件」页按 Ctrl+V 粘贴压缩；3）先下载到本地再上传。');
         }
       }
     }
@@ -2303,6 +2303,21 @@ $('drop').addEventListener('drop', async e=>{
     if(files.length){ addFiles(files); return; }
   }
   addFiles([...e.dataTransfer.files]);
+});
+
+// 支持 Ctrl+V 粘贴图片（从浏览器「复制图片」后直接贴进上传区，绕过链接 CORS 限制）
+window.addEventListener('paste', async e=>{
+  if(activeMode !== 'file') return;  // 只在「上传文件」标签下响应
+  const files = [];
+  if(e.clipboardData){
+    for(const item of e.clipboardData.items){
+      if(item.kind === 'file' && item.type.startsWith('image/')){
+        const f = item.getAsFile();
+        if(f) files.push(f);
+      }
+    }
+  }
+  if(files.length){ e.preventDefault(); addFiles(files); }
 });
 
 // ---------- 选择文件 ----------
