@@ -211,7 +211,6 @@
 
     <div class="tabpane" id="paneUrl" style="display:none">
       <textarea id="url" placeholder="https://a.com/1.gif&#10;https://a.com/2.png&#10;https://a.com/3.jpg"></textarea>
-      <div class="proxystatus" id="proxyStatus"><span class="dot"></span><span id="proxyStatusText">检测本地代理中...</span></div>
       <div class="divider">或 上传表格（CSV，含图片链接列）</div>
       <div class="row">
         <button type="button" class="ghost mini" id="pickCsv">📄 上传 CSV 表格</button>
@@ -366,7 +365,7 @@
     </div>
     <div class="prog" id="prog"><span class="spinner"></span><span class="ptxt" id="progTxt">压缩中…</span></div>
     <div class="saverow" style="margin-top:12px">
-      <button type="button" class="ghost mini" id="pickDir">💾 选择保存文件夹</button>
+      <button type="button" class="ghost mini" id="pickDir">💾 存到指定文件夹（可选）</button>
       <input type="text" id="saveDirInput" placeholder="或直接输入路径（留空 = 默认 output 文件夹）" spellcheck="false">
       <button type="button" class="ghost mini" id="openDir">📂 打开文件夹</button>
     </div>
@@ -2057,56 +2056,37 @@ window.ENG = (function(){
     if(/\.tiff?$/i.test(n)||type==='image/tiff') return 'TIFF';
     const t=(type||'').split('/')[1]; return t? t.toUpperCase():'UNKNOWN';
   }
-  async function checkProxy(){
+  // 本地服务代理地址：若页面由本地服务托管（http://127.0.0.1:PORT）则同源，否则回退固定端口
+  function proxyBase(){
     try{
-      const r=await fetch('http://127.0.0.1:8001/ping', {method:'HEAD', signal: AbortSignal.timeout(3000)});
-      return r.ok;
-    }catch(e){ return false; }
-  }
-  function setProxyStatus(ok, text){
-    const el=$('proxyStatus'), txt=$('proxyStatusText');
-    if(!el || !txt) return;
-    el.className='proxystatus '+(ok?'ok':'err');
-    txt.textContent = text || (ok?'本地代理运行中（图片链接模式可用）':'本地代理未启动：请双击 start_with_proxy.bat');
-  }
-  async function updateProxyStatus(){
-    const ok = await checkProxy();
-    setProxyStatus(ok);
-    return ok;
+      const u=new URL(location.href);
+      if(u.protocol==='http:' && (u.hostname==='127.0.0.1'||u.hostname==='localhost')) return '';
+    }catch(e){}
+    return 'http://127.0.0.1:8765';
   }
 
   async function bufOf(item){
     if(item.kind==='url'){
       const url=item.url;
-      // 1) 直接 fetch（同域 / 允许跨域时可用）
+      // 1) 直接 fetch（同源 / 允许跨域时可用）
       try{
         const r=await fetch(url);
         if(!r.ok) throw new Error('HTTP '+r.status);
         return {buf:new Uint8Array(await r.arrayBuffer()), type:r.headers.get('content-type')||''};
       }catch(e){
-        // 2) 静态图回退：<img crossOrigin> + canvas 读取像素（仅对允许匿名跨域的服务器有效；动图会丢帧，故跳过）
+        // 2) 静态图：<img crossOrigin> + canvas（仅对允许匿名跨域的服务器有效；动图跳过）
         const animLikely=/\.(gif|apng)(\?|$)/i.test(url);
         if(!animLikely){
           try{ const blob=await loadViaImg(url); return {buf:new Uint8Array(await blob.arrayBuffer()), type:blob.type||''}; }catch(_){}
         }
-        // 3) 仍失败：回退到本地 URL 代理（绕过浏览器 CORS 限制）
-        let proxyErr='';
+        // 3) 回退到本地服务代理（同源或固定端口，绕过 CORS/防盗链）
         try{
-          const proxyUrl='http://127.0.0.1:8001/fetch_url?url='+encodeURIComponent(url);
-          const r=await fetch(proxyUrl, {signal: AbortSignal.timeout(60000)});
-          if(!r.ok){
-            const body=await r.text().catch(()=>'');
-            proxyErr='代理返回错误 '+r.status+'：'+(body||r.statusText);
-            throw new Error(proxyErr);
-          }
+          const base=proxyBase();
+          const r=await fetch(base+'/fetch_url?url='+encodeURIComponent(url), {signal: AbortSignal.timeout(60000)});
+          if(!r.ok){ const b=await r.text().catch(()=>''); throw new Error('代理返回 '+r.status+'：'+(b||r.statusText)); }
           return {buf:new Uint8Array(await r.arrayBuffer()), type:r.headers.get('content-type')||''};
         }catch(_2){
-          // 4) 代理也没起或也失败：给出明确、可操作的中文提示
-          const isConnError = (_2 && (_2.name==='TypeError' || /fetch|NetworkError|Failed to fetch/i.test(String(_2.message||_2))));
-          if(!proxyErr && isConnError){
-            throw new Error('本地代理未启动。请保持 start_with_proxy.bat 弹出的黑色窗口不关闭，或重新双击 start_with_proxy.bat 后再试。也可以：1）在浏览器中右键图片→复制图片，回到「上传文件」页按 Ctrl+V 粘贴压缩；2）先下载到本地再上传。');
-          }
-          throw new Error('无法下载该图片链接（浏览器被 CORS/防盗链限制'+(proxyErr?'；'+proxyErr:'')+'）。方案：1）确认 start_with_proxy.bat 的黑色代理窗口未关闭；2）在浏览器中右键图片→复制图片，回到「上传文件」页按 Ctrl+V 粘贴压缩；3）先下载到本地再上传。');
+          throw new Error('无法获取该图片（来源站防盗链或网络异常）。可改用「上传文件」页：在浏览器中右键图片→复制图片，回到本页按 Ctrl+V 粘贴压缩；或把链接发给我代压。');
         }
       }
     }
@@ -2291,10 +2271,6 @@ window.ENG = (function(){
       format_in:fmt, format_out:best.outFmt, note };
     return {blob:best.blob, meta, preview:URL.createObjectURL(best.blob)};
   }
-  // 暴露给外层脚本使用（Tab 切换时检测代理状态）
-  window.checkProxy = checkProxy;
-  window.setProxyStatus = setProxyStatus;
-  window.updateProxyStatus = updateProxyStatus;
   return {probe, compress, fmtOf};
 })();
 </script>
@@ -2326,13 +2302,9 @@ function switchTab(mode){
   $('paneUrl').style.display  = mode==='url'  ? '' : 'none';
   if(typeof paramScope === 'number' && !queue[paramScope]) setParamScope('global');
   renderQueue(); updateCount();
-  if(mode === 'url') updateProxyStatus();
 }
 $('tabFile').onclick = () => switchTab('file');
 $('tabUrl').onclick = () => switchTab('url');
-if($('proxyStatus')) $('proxyStatus').onclick = () => { $('proxyStatusText').textContent='检测本地代理中...'; updateProxyStatus(); };
-// 页面加载后检测一次代理状态
-setTimeout(updateProxyStatus, 300);
 
 // 拖拽区可直接点击选择文件；文件夹通过拖拽添加
 // ---------- 拖拽（文件夹递归 + 多文件）----------
@@ -2888,7 +2860,7 @@ let dirHandle = null;    // File System Access API 选中的目录句柄（https
 (async function initSaveInfo(){
   defaultSaveDir = '';
   $('saveDirInput').value = '';
-  $('saveDirInput').placeholder = '点击左侧按钮选择保存文件夹（浏览器限制，无法显示完整路径）';
+  $('saveDirInput').placeholder = '未选文件夹则自动下载到浏览器默认下载目录（无需操作）';
 })();
 
 // 压缩结果输出：若已选目录（https 环境）直接写入；否则自动下载到本地
@@ -2917,34 +2889,28 @@ async function saveViaFilePicker(it, blob, fmt){
   }
 }
 
-// 兜底：在新标签页打开 blob，提示用户右键保存
-function openBlobForManualSave(it, blob, fmt, msg){
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  setTimeout(()=>URL.revokeObjectURL(url), 30000);
-  $('err').textContent = msg;
+// 自动下载到浏览器默认下载目录（无需任何前置操作）
+function triggerDownload(blob, filename){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 6000);
 }
 
 async function saveOne(it, blob, fmt){
   it._outFmt = fmt;
+  // 若用户指定了保存文件夹（localhost/https 安全上下文），直接写入该目录
   if(dirHandle){
     try{
       const h = await dirHandle.getFileHandle(outName(it, fmt), {create:true});
       const w = await h.createWritable(); await w.write(blob); await w.close();
       return;
-    }catch(e){
-      console.error('写入已选目录失败：', e);
-      // 若目录写入失败，先尝试弹出系统保存对话框兜底
-      const saved = await saveViaFilePicker(it, blob, fmt);
-      if(saved) return;
-      // 再兜底：打开 blob 页让用户右键保存，并说明原因
-      openBlobForManualSave(it, blob, fmt,
-        '保存失败：无法写入 "'+(dirHandle.name||'已选文件夹')+'"。可能原因：1）选择文件夹时未开启"保存更改 / Save changes"权限；2）目录只读。已在新标签页打开结果，请右键"图片另存为"手动保存，或重新选择文件夹并开启写入权限。');
-      return;
-    }
+    }catch(e){ console.error('写入已选目录失败，回退到自动下载：', e); }
   }
-  // 理论上不会走到这里（go.onclick 已拦截未选目录的情况），保留兜底
-  openBlobForManualSave(it, blob, fmt, '未选择保存文件夹，无法自动保存。已在新标签页打开结果，请右键"图片另存为"保存，或先点击"选择保存文件夹"。');
+  // 默认：自动下载到浏览器默认下载目录（零操作）
+  triggerDownload(blob, outName(it, fmt));
 }
 
 // 选择保存文件夹：https/localhost 下直接写入；其它环境提示无法使用
@@ -3073,7 +3039,6 @@ $('go').onclick = async () => {
   const files = queue.filter(i=>i.kind==='file');
   const urls = queue.filter(i=>i.kind==='url');
   if(files.length===0 && urls.length===0){ $('err').textContent='请先添加图片、文件夹或链接'; return; }
-  if(!dirHandle){ alert('请先选择保存文件夹'); return; }
   // 压缩前切回全局参数视图，确保 buildParams 读到全局参数
   if(paramScope !== 'global') setParamScope('global');
   let params;
